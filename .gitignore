@@ -1,0 +1,12 @@
+# Ignore uploads (media files)
+wp-content/uploads/
+
+# Ignore cache, backup
+wp-content/cache/
+wp-content/backups/
+wp-content/upgrade/
+
+# Ignore common system files
+*.log
+.DS_Store
+Thumbs.db
