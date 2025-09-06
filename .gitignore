@@ -1,12 +1,21 @@
-# Ignore uploads (media files)
-wp-content/uploads/
+# Ignore uploads and upgrade
+uploads/
+upgrade/
 
-# Ignore cache, backup
-wp-content/cache/
-wp-content/backups/
-wp-content/upgrade/
+# Ignore cache, backup nếu có
+cache/
+backups/
 
-# Ignore common system files
+# Ignore system files
 *.log
 .DS_Store
 Thumbs.db
+
+# Ignore node & build files nếu có (ví dụ nếu bạn dùng npm/yarn trong themes hoặc plugins)
+node_modules/
+dist/
+build/
+
+# Ignore other WP-specific cache in subdirs
+plugins/*/cache/
+themes/*/cache/
