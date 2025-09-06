@@ -1,0 +1,81 @@
+.section-boxes{
+    margin-top: -60px;
+    position: relative; 
+    z-index: 10; 
+    display: flex; 
+    justify-content: center; 
+    gap: 20px; 
+    flex-wrap: wrap;
+}
+#col-md-4-bn{
+    width: 28%;
+}
+#bn-card-home{
+    padding: 25px 25px 25px 25px;
+    height: 400px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.icon-inner{
+    color: rgb(133, 201, 238);
+    font-size: 40px;
+    font-family: Helvetica !important;
+}
+#title-bn-home{
+    color: #203b87;
+    font-size: 20px; 
+    font-family: Helvetica !important;
+}
+
+
+
+/* Logo Bao Chi */
+.logo-container{
+    display: flex;
+}
+.partner-logos{
+    padding: 10% 5% 5% 5%;
+}
+.title-baochi{
+    display: flex;
+    text-align: center;
+    border-bottom: 3px solid #ff5d00;
+    justify-self: anchor-center;
+}
+#h2-baochi-home{
+    font-family: Helvetica !important;
+    text-align: center;
+    color: black;
+    margin-bottom: 5%;
+    margin-left: 5px;
+    font-weight: 700;
+    display: inline-block; /* Cho phép căn giữa và giữ nguyên dòng */
+    
+}
+#h2-baochi-home2{
+    font-family: Helvetica !important;
+    text-align: center;
+    color: rgb(253, 108, 9);
+    margin-bottom: 5%;
+    font-weight: 700;
+    margin-left: 5px;
+    display: inline-block; /* Cho phép căn giữa và giữ nguyên dòng */
+}
+.logo-item img {
+    max-height: 80px;   /* chiều cao đồng đều */
+    object-fit: contain; /* giữ tỉ lệ ảnh */
+    margin: 0 auto;     /* căn giữa */
+    box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.3); /* bóng đổ dưới */
+    display: inline-block; /* để áp dụng gọn theo text */
+    padding-bottom: 4px;
+    max-width: 100%;
+    
+}
+.logo-container {
+    padding: 15px;
+    text-align: center;
+    background: #fff;
+    margin-top: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
