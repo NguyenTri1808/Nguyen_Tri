@@ -12,7 +12,7 @@
 }
 #bn-card-home{
     padding: 25px 25px 25px 25px;
-    height: 400px;
+    height: 420px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 .icon-inner{
@@ -57,7 +57,7 @@
     color: rgb(253, 108, 9);
     margin-bottom: 5%;
     font-weight: 700;
-    margin-left: 5px;
+    margin-left: 7px;
     display: inline-block; /* Cho phép căn giữa và giữ nguyên dòng */
 }
 .logo-item img {
@@ -74,8 +74,235 @@
     padding: 15px;
     text-align: center;
     background: #fff;
-    margin-top: 20px;
+    margin-top: 50px;
     border-radius: 5px;
     margin-bottom: 20px;
 }
+ /* BÁC SĨ & CHUYÊN GIA MẮT  */
+#h2-bacsi-home{
+    font-family: Helvetica !important;
+    text-align: center;
+    color: black;
+    margin-bottom: 5%;
+    font-weight: 700;
+    display: inline-block; /* Cho phép căn giữa và giữ nguyên dòng */
+}
+#h2-bacsi-home3{
+    font-family: Helvetica !important;
+    text-align: center;
+    color: #85c9ee;
+    margin-left: 7px;
+    font-weight: 700;
+    display: inline-block; /* Cho phép căn giữa và giữ nguyên dòng */
+ }
+.title-doctors{
+    display: flex;
+    text-align: center;
+    border-bottom: 3px solid #85c9ee;
+    justify-self: anchor-center;
+    font-family: Helvetica !important;
+    margin-top: 5%;
+}
+.text-doctors{
+    font-family: Helvetica !important;
+    font-size: 16px;
+    text-align: center;
+    justify-self: anchor-center;
+    margin-top: 15px;
+    margin-bottom: 5%;
+}
+.staff-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.staff-card .image-wrapper {
+  position: relative;
+}
+
+.staff-card img.staff-img {
+  width: 100%;
+  transition: transform 0.4s ease;
+  border-radius: 10px;
+}
+
+.staff-card:hover img.staff-img {
+  transform: scale(1.05);
+}
+
+.staff-card .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  padding: 15px;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.staff-card:hover .overlay {
+  opacity: 1;
+}
+.image-wrapper{
+    height: 500px;
+}
+.doctors-container{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+/* DỊCH VỤ UY TÍN TẠI VIN EYE */
+.dichvu-box {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    transition: transform 0.3s ease;
+}
+
+.dichvu-box:hover {
+    transform: translateY(-6px);
+}
+
+.dichvu-img img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    display: block;
+    border-radius: 20px;
+    transition: transform 0.4s ease;
+}
+
+.dichvu-box:hover .dichvu-img img {
+    transform: scale(1.05);
+}
+
+.dichvu-name {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.9);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: #002366;
+    text-transform: uppercase;
+    font-size: 14px;
+    width: 85%;
+    text-align: center;
+}
+/* CƠ SỞ VẬT CHẤT TẠI VIN EYE  */
+.facility-section {
+  background-image: url('https://benhvienmatvineye.vn/wp-content/uploads/2023/07/cs-01.png');
+  position: relative;
+  margin-top: 5%;
+  margin-bottom: 5%;
+  background-size: cover;      /* giống object-fit: cover */
+  background-position: center; /* căn giữa */
+  background-repeat: no-repeat; 
+}
+
+#text-center-vatchat {
+  background: rgb(5 14 23 / 41%); 
+  padding: 12px 20px 12px 20px;
+  border-radius: 20px;
+  width: 60%;
+  color: white;
+}
+
+.facility-subtitle {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #fff;
+}
+
+.facility-item img {
+  transition: transform 0.3s ease;
+}
+
+.facility-item img:hover {
+  transform: scale(1.05);
+}
+#img-vatchat-home{
+    width: 100%;
+    height: 200px;
+    margin-bottom: 20px;
+}
+#box-vatchat{
+    margin-top: 50PX;
+    margin-bottom: 50px;
+}
+/* Video Section */
+.video-item {
+    justify-self: center;
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+/* kết quả  */
+.ketqua-grid{
+  display:grid;
+  grid-template-columns: 1.4fr 1fr; /* trái to hơn phải */
+  gap:24px;
+  align-items:start;
+}
+
+.ketqua-left img.ketqua-big{
+  width:100%;
+  height:530px;
+  display:block;
+  border-radius:12px;
+  object-fit:cover;
+}
+
+.ketqua-right{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cột bên phải */
+  gap:16px;
+}
+
+.ketqua-thumb-img{
+  width:100%;
+  height:100%;
+  aspect-ratio: 1 / 1;    /* vuông như ảnh mẫu */
+  object-fit: cover;
+  border-radius:10px;
+  display:block;
+}
+.ketqua-thumb-img:hover{
+  transform: scale(1.02);
+  transition: transform .2s ease;
+}
+
+
+
+
+/* footer */
+footer {
+    background-color: #203b87;
+}
+#container-footer {
+    padding: 100px 0px 50px 0px;
+    color: white;
+}
+.promo-text{
+    font-size: 16px;
+}
+.form-container{
+    padding: 0px 50px;
+}
+.promo-text{
+  text-align: left;
+  line-height: 1.6; 
+}
+
 
