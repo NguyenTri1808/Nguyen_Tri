@@ -10,20 +10,6 @@
 <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-          <div class="col-md-3">
-            <!-- Logo -->
-              <a class="navbar-brand" href="<?php echo esc_url(home_url('/')); ?>">
-                  <?php
-                  if (has_custom_logo()) {
-                      the_custom_logo();
-                  } else {
-                      bloginfo('name');
-                  }
-                  ?>
-              </a>
-            </div>
-           
-
             <!-- Toggle button -->
             <!-- <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="<?php esc_attr_e('Toggle navigation', 'vineye'); ?>">
@@ -46,6 +32,18 @@
                     ?>
                 </div>
               </div>
+              <div class="col-md-3">
+            <!-- Logo -->
+              <a class="navbar-brand" href="<?php echo esc_url(home_url('/')); ?>">
+                  <?php
+                  if (has_custom_logo()) {
+                      the_custom_logo();
+                  } else {
+                      bloginfo('name');
+                  }
+                  ?>
+              </a>
+            </div>
               <div class="col-md-3">
                 <!-- Search Form -->
                 <?php get_search_form(); ?>
