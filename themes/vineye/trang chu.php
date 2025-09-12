@@ -8,67 +8,56 @@ get_header();
 <?php echo do_shortcode('[smartslider3 slider="2"]'); ?>
 
 <div class="container">
-    <div class="row">
-        <div class="section-boxes">
-            <?php
-            $content1 = get_field('content1');
-            if ($content1) :
-                foreach ($content1 as $item) : 
+  <?php
+  $content1 = get_field('content1');
+  if ($content1) :
+  ?>
+    <div class="section-boxes row gx-4 gy-4">
+      <?php foreach ($content1 as $item) :
+        // Gom 3 nhóm vào mảng để lặp
+        $blocks = [
+          ['title' => $item['title1'] ?? '', 'icon' => $item['icon1'] ?? '', 'desc' => $item['desc1'] ?? ''],
+          ['title' => $item['title2'] ?? '', 'icon' => $item['icon2'] ?? '', 'desc' => $item['desc2'] ?? ''],
+          ['title' => $item['title3'] ?? '', 'icon' => $item['icon3'] ?? '', 'desc' => $item['desc3'] ?? ''],
+        ];
 
-                    // Gom 3 nhóm vào mảng để lặp
-                    $blocks = [
-                        [
-                            'title' => $item['title1'] ?? '',
-                            'icon'  => $item['icon1'] ?? '',
-                            'desc'  => $item['desc1'] ?? '',
-                        ],
-                        [
-                            'title' => $item['title2'] ?? '',
-                            'icon'  => $item['icon2'] ?? '',
-                            'desc'  => $item['desc2'] ?? '',
-                        ],
-                        [
-                            'title' => $item['title3'] ?? '',
-                            'icon'  => $item['icon3'] ?? '',
-                            'desc'  => $item['desc3'] ?? '',
-                        ],
-                    ];
+        foreach ($blocks as $block) :
+          if (!empty($block['title']) || !empty($block['desc']) || !empty($block['icon'])) : ?>
+            <div class="col-12 col-md-6 col-lg-4">
+              <article class="card feature-card h-100 text-center shadow-sm">
 
-                    foreach ($blocks as $block) :
-                        if (!empty($block['title']) || !empty($block['desc']) || !empty($block['icon'])) : ?>
+                <?php if (!empty($block['icon'])) : ?>
+                  <div class="feature-icon mb-3">
+                    <?php
+                    // Cho phép 1 số thẻ an toàn (SVG, i, img)
+                    echo wp_kses($block['icon'], [
+                      'svg'  => ['class'=>[], 'xmlns'=>[], 'viewBox'=>[], 'width'=>[], 'height'=>[], 'fill'=>[], 'stroke'=>[], 'stroke-width'=>[], 'stroke-linecap'=>[], 'stroke-linejoin'=>[]],
+                      'path' => ['d'=>[], 'fill'=>[], 'stroke'=>[], 'stroke-width'=>[], 'stroke-linecap'=>[], 'stroke-linejoin'=>[]],
+                      'i'    => ['class'=>[]],
+                      'span' => ['class'=>[]],
+                      'img'  => ['src'=>[], 'alt'=>[], 'width'=>[], 'height'=>[], 'loading'=>[], 'decoding'=>[]],
+                    ]);
+                    ?>
+                  </div>
+                <?php endif; ?>
 
-                                <div class="col-md-4" id="col-md-4-bn">
-                                    <div class="card mb-4 text-center" id="bn-card-home" >
+                <?php if (!empty($block['title'])) : ?>
+                  <h3 class="feature-title mb-2"><?php echo esc_html($block['title']); ?></h3>
+                <?php endif; ?>
 
-                                        <!-- Icon -->
-                                        <?php if (!empty($block['icon'])) : ?>
-                                            <div class="mb-3">
-                                                <div class="icon-inner" >
-                                                    <?php echo $block['icon']; ?>
-                                                </div>
-                                            </div>
-                                        <?php endif; ?>
+                <?php if (!empty($block['desc'])) : ?>
+                  <p class="feature-desc mb-0"><?php echo esc_html($block['desc']); ?></p>
+                <?php endif; ?>
 
+              </article>
+            </div>
+          <?php endif;
+        endforeach;
+      endforeach; ?>
+    </div>
+  <?php endif; ?>
+</div>
 
-                                        <!-- Title -->
-                                        <?php if (!empty($block['title'])) : ?>
-                                            <h3 id="title-bn-home"><?php echo esc_html($block['title']); ?></h3>
-                                        <?php endif; ?>
-
-                                        <!-- Desc -->
-                                        <?php if (!empty($block['desc'])) : ?>
-                                            <p><?php echo esc_html($block['desc']); ?></p>
-                                        <?php endif; ?>
-
-                                    </div>
-                                </div>
-                            
-                        <?php endif;
-                    endforeach;
-                endforeach;
-            endif;
-            ?>
-        </div>
         <!-- Báo Chí Nói Gì Về Chúng Tôi -->
         <section class="partner-logos">
             <div class="title-baochi">
@@ -99,7 +88,7 @@ get_header();
                             echo '<div class="col-md-2">
                                     <div class="logo-item">
                                         <a href="https://alobacsi.com/trung-tam-mat-quoc-te-vin-eye-dong-hanh-giai-phong-tam-nhin-cho-hang-trieu-nguoi.html?gidzl=QeEnU7oSAYbdch1xUOCiA6ETj7XZZNmjBiFWVJNQSYrzaRegP8acV7YMkdeqZN0eBfFlVJKkAAjbTfWY90">
-                                        <img loading="lazy" decoding="async" width="200" height="92" src="' . $src . '" />
+                                        <img loading="lazy" decoding="async" style="margin-top: 20px"    width="200" height="92" src="' . $src . '" />
                                         </a>
                                     </div>
                                 </div>';
@@ -381,41 +370,83 @@ get_header();
             <div class="text-doctors">
                 <p>HÈ SANG – ƯU ĐÃI NGẬP TRÀN</p>
             </div>
-            <?php 
-            $khuyenmai = get_field('khuyenmai');
-
-            if ($khuyenmai && is_array($khuyenmai)) {
-                echo '<div class="row">';
-
-                foreach ($khuyenmai as $raw) {
-                    if (empty($raw)) continue;
-
-                    $embed_html = '';
-
-                    if (is_array($raw)) {
-                        $url = $raw['url'] ?? $raw['link'] ?? '';
-                        if ($url) $embed_html = wp_oembed_get($url);
-                    } else {
-                        // Nếu là chuỗi (URL hoặc iframe HTML)
-                        if (filter_var($raw, FILTER_VALIDATE_URL)) {
-                            $embed_html = wp_oembed_get($raw);
-                        } else {
-                            $embed_html = $raw;
-                        }
+            <?php
+                if (!function_exists('get_first_image_url_from_content')) {
+                function get_first_image_url_from_content($post_id = null) {
+                    $post = get_post($post_id ?: get_the_ID());
+                    if (!$post) return '';
+                    // Bắt <img ... src="...">
+                    if (preg_match('/<img[^>]+src=[\'"]([^\'"]+)[\'"]/i', $post->post_content, $m)) {
+                    return $m[1];
                     }
-
-                    if ($embed_html) {
-                        echo '<div class="col-md-6">';
-                        echo '  <div class="video-item">';
-                        echo        $embed_html;
-                        echo '  </div>';
-                        echo '</div>';
-                    }
+                    return '';
+                }
                 }
 
-                echo '</div>'; // end .row
-            }
-            ?>
+                // Query 3 bài thuộc category 'home'
+                $q = new WP_Query([
+                'post_type'           => 'post',
+                'posts_per_page'      => 3,
+                'category_name'       => 'home', // đổi nếu cần
+                'orderby'             => 'date',
+                'order'               => 'DESC',
+                'ignore_sticky_posts' => true,
+                ]);
+
+                if ($q->have_posts()) : ?>
+                <div id="box-khuyenmai" class="row g-4">
+                    <?php while ($q->have_posts()) : $q->the_post(); ?>
+                    <div class="col-12 col-md-4">
+                        <article <?php post_class('card h-100'); ?>>
+
+                        <?php
+                        // 1) Ảnh đại diện (featured) nếu có
+                        $thumb_html = '';
+                        if (has_post_thumbnail()) {
+                            $thumb_html = get_the_post_thumbnail(null, 'medium', [
+                            'class'   => 'w-100 h-100',
+                            'style'   => 'object-fit:cover;',
+                            'loading' => 'lazy',
+                            ]);
+                        } else {
+                            // 2) Fallback: lấy ảnh đầu tiên trong nội dung
+                            $first_img = get_first_image_url_from_content();
+                            if ($first_img) {
+                            $thumb_html = '<img src="' . esc_url($first_img) . '" alt="' . esc_attr(get_the_title()) . '" class="w-100 h-100" style="object-fit:cover;" loading="lazy">';
+                            }
+                        }
+
+                        if ($thumb_html) : ?>
+                            <a href="<?php the_permalink(); ?>" class="ratio ratio-16x9 d-block overflow-hidden">
+                            <?php echo $thumb_html; ?>
+                            </a>
+                        <?php endif; ?>
+
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">
+                            <a href="<?php the_permalink(); ?>" class="stretched-link text-decoration-none">
+                                <?php the_title(); ?>
+                            </a>
+                            </h5>
+                            <p class="card-text small text-muted mb-2">
+                            <time datetime="<?php echo esc_attr(get_the_date('c')); ?>">
+                                <?php echo esc_html(get_the_date()); ?>
+                            </time>
+                            </p>
+                            <p class="card-text">
+                            <?php echo esc_html(wp_trim_words(get_the_excerpt(), 25)); ?>
+                            </p>
+                        </div>
+                        </article>
+                    </div>
+                    <?php endwhile; ?>
+                </div>
+                <?php wp_reset_postdata(); ?>
+                <?php else : ?>
+                <p>Chưa có bài viết.</p>
+                <?php endif; ?>
+
+
         </section>
     </div>
  </div>
