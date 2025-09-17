@@ -8,55 +8,108 @@ get_header();
 <?php echo do_shortcode('[smartslider3 slider="2"]'); ?>
 
 <div class="container">
-  <?php
-  $content1 = get_field('content1');
-  if ($content1) :
-  ?>
-    <div class="section-boxes row gx-4 gy-4">
-      <?php foreach ($content1 as $item) :
-        // Gom 3 nhóm vào mảng để lặp
-        $blocks = [
-          ['title' => $item['title1'] ?? '', 'icon' => $item['icon1'] ?? '', 'desc' => $item['desc1'] ?? ''],
-          ['title' => $item['title2'] ?? '', 'icon' => $item['icon2'] ?? '', 'desc' => $item['desc2'] ?? ''],
-          ['title' => $item['title3'] ?? '', 'icon' => $item['icon3'] ?? '', 'desc' => $item['desc3'] ?? ''],
-        ];
+    <div class="row">
+        <?php
+        $content1 = get_field('content1');
+        $blocks = [];
+        foreach (['bn1','bn2','bn3'] as $k) {
+        if (!empty($content1[$k])) $blocks[] = $content1[$k];
+        }
 
-        foreach ($blocks as $block) :
-          if (!empty($block['title']) || !empty($block['desc']) || !empty($block['icon'])) : ?>
-            <div class="col-12 col-md-6 col-lg-4">
-              <article class="card feature-card h-100 text-center shadow-sm">
+        if ($blocks):
+        ?>
+        <!-- Swiper CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
 
-                <?php if (!empty($block['icon'])) : ?>
-                  <div class="feature-icon mb-3">
-                    <?php
-                    // Cho phép 1 số thẻ an toàn (SVG, i, img)
-                    echo wp_kses($block['icon'], [
-                      'svg'  => ['class'=>[], 'xmlns'=>[], 'viewBox'=>[], 'width'=>[], 'height'=>[], 'fill'=>[], 'stroke'=>[], 'stroke-width'=>[], 'stroke-linecap'=>[], 'stroke-linejoin'=>[]],
-                      'path' => ['d'=>[], 'fill'=>[], 'stroke'=>[], 'stroke-width'=>[], 'stroke-linecap'=>[], 'stroke-linejoin'=>[]],
-                      'i'    => ['class'=>[]],
-                      'span' => ['class'=>[]],
-                      'img'  => ['src'=>[], 'alt'=>[], 'width'=>[], 'height'=>[], 'loading'=>[], 'decoding'=>[]],
-                    ]);
-                    ?>
-                  </div>
-                <?php endif; ?>
+        <div id="swiper-container" class="container my-5">
+        <div class="swiper bv-features-swiper">
+            <div class="swiper-wrapper">
+            <?php foreach ($blocks as $b):
+                $title = $b['title'] ?? '';
+                $desc  = $b['desc']  ?? '';
+                $icon  = $b['icon']  ?? '';
 
-                <?php if (!empty($block['title'])) : ?>
-                  <h3 class="feature-title mb-2"><?php echo esc_html($block['title']); ?></h3>
-                <?php endif; ?>
+                // Chuẩn bị icon: hỗ trợ SVG string hoặc URL ảnh / ACF image array
+                $icon_html = '';
+                if (is_array($icon)) {
+                $src = $icon['url'] ?? '';
+                if ($src) $icon_html = '<img src="'.esc_url($src).'" alt="" class="fi-img">';
+                } else {
+                if (filter_var($icon, FILTER_VALIDATE_URL)) {
+                    $icon_html = '<img src="'.esc_url($icon).'" alt="" class="fi-img">';
+                } else {
+                    $icon_html = (string)$icon; // SVG thô
+                }
+                }
+            ?>
+            <div class="swiper-slide">
+                <div class="card feature-card h-100 shadow-sm border-0">
+                <div class="card-body p-4 text-center d-flex flex-column">
+                    <?php if ($icon_html): ?>
+                    <div class="feature-icon mx-auto mb-3">
+                        <?php
+                        echo wp_kses($icon_html, [
+                        'svg' => [
+                            'class'=>true,'xmlns'=>true,'viewBox'=>true,'width'=>true,'height'=>true,
+                            'fill'=>true,'aria-hidden'=>true,'role'=>true,'preserveAspectRatio'=>true
+                        ],
+                        'path' => [
+                            'd'=>true,'fill'=>true,'fill-rule'=>true,'clip-rule'=>true,
+                            'stroke'=>true,'stroke-width'=>true,'stroke-linecap'=>true,'stroke-linejoin'=>true
+                        ],
+                        'g' => ['fill'=>true,'stroke'=>true,'stroke-width'=>true,'clip-path'=>true],
+                        'img' => ['src'=>true,'alt'=>true,'width'=>true,'height'=>true,'loading'=>true,'decoding'=>true,'class'=>true]
+                        ]);
+                        ?>
+                    </div>
+                    <?php endif; ?>
 
-                <?php if (!empty($block['desc'])) : ?>
-                  <p class="feature-desc mb-0"><?php echo esc_html($block['desc']); ?></p>
-                <?php endif; ?>
+                    <?php if ($title): ?>
+                    <h3 class="h5 fw-bold text-primary mb-3"><?php echo esc_html($title); ?></h3>
+                    <?php endif; ?>
 
-              </article>
+                    <?php if ($desc): ?>
+                    <div class="text-secondary lh-lg flex-grow-1">
+                        <?php echo wpautop(wp_kses_post($desc)); ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                </div>
             </div>
-          <?php endif;
-        endforeach;
-      endforeach; ?>
-    </div>
-  <?php endif; ?>
-</div>
+            <?php endforeach; ?>
+            </div>
+
+            <!-- Nút điểm điều hướng -->
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-pagination d-lg-none"></div>
+        </div>
+        </div>
+
+        <!-- Swiper JS -->
+        <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+        <script>
+        new Swiper('.bv-features-swiper', {
+            slidesPerView: 1,
+            spaceBetween: 16,
+            grabCursor: true,
+            loop: false,
+            navigation: {
+            nextEl: '.bv-features-swiper .swiper-button-next',
+            prevEl: '.bv-features-swiper .swiper-button-prev',
+            },
+            pagination: {
+            el: '.bv-features-swiper .swiper-pagination',
+            clickable: true,
+            },
+            breakpoints: {
+            768: { slidesPerView: 2, spaceBetween: 24 },
+            992: { slidesPerView: 3, spaceBetween: 28 }
+            }
+        });
+        </script>
+        <?php endif; ?>
+
 
         <!-- Báo Chí Nói Gì Về Chúng Tôi -->
         <section class="partner-logos">
@@ -243,10 +296,11 @@ get_header();
                     <h2 id="h2-bacsi-home"> TẠI VIN EYE</h2>
                 </div>
                 <?php 
-                $group = get_field('video');
+                    $group = get_field('video');
 
-                if ($group && is_array($group)) {
-                    echo '<div class="row">';
+                    if ($group && is_array($group)) {
+                    echo '<div class="container video-wide">';                  // container riêng, rộng hơn
+                    echo '  <div class="row g-4 g-xl-5">';                      // tăng khoảng cách cột/hàng
 
                     foreach ($group as $raw) {
                         if (empty($raw)) continue;
@@ -254,31 +308,30 @@ get_header();
                         $embed_html = '';
 
                         if (is_array($raw)) {
-                            $url = $raw['url'] ?? $raw['link'] ?? '';
-                            if ($url) $embed_html = wp_oembed_get($url);
+                        $url = $raw['url'] ?? $raw['link'] ?? '';
+                        if ($url) $embed_html = wp_oembed_get($url);
                         } else {
-                            // Nếu là chuỗi (URL hoặc iframe HTML)
-                            if (filter_var($raw, FILTER_VALIDATE_URL)) {
-                                $embed_html = wp_oembed_get($raw);
-                            } else {
-                                $embed_html = $raw;
-                            }
+                        $embed_html = filter_var($raw, FILTER_VALIDATE_URL) ? wp_oembed_get($raw) : $raw; // iframe html
                         }
 
                         if ($embed_html) {
-                            echo '<div class="col-md-6">';
-                            echo '  <div class="video-item">';
-                            echo        $embed_html;
-                            echo '  </div>';
-                            echo '</div>';
+                        echo '<div class="col-12 col-md-6">';                   // 1 cột mobile, 2 cột từ md
+                        echo '  <div class="video-item">';
+                        echo '    <div class="video-responsive">';              // hộp giữ tỉ lệ 16:9
+                        echo          $embed_html;
+                        echo '    </div>';
+                        echo '  </div>';
+                        echo '</div>';
                         }
                     }
 
-                    echo '</div>'; // end .row
-                }
-                ?>
+                    echo '  </div>'; // .row
+                    echo '</div>';   // .container.video-wide
+                    }
+                ?>  
 
         </section>
+        <!-- Kết quả của khách hàng -->
         <section>
             <div class="title-doctors">
                 <h2 id="h2-bacsi-home3">KẾT QUẢ  </h2>
@@ -387,7 +440,7 @@ get_header();
                 $q = new WP_Query([
                 'post_type'           => 'post',
                 'posts_per_page'      => 3,
-                'category_name'       => 'home', // đổi nếu cần
+                'category_name'       => 'khuyenmai', // đổi nếu cần
                 'orderby'             => 'date',
                 'order'               => 'DESC',
                 'ignore_sticky_posts' => true,

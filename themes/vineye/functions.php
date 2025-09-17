@@ -208,3 +208,75 @@ add_filter('dv/category/query_args', function($args, $term) {
   return $args;
 }, 10, 2);
 
+// Tạo sidebar tùy chỉnh
+function my_custom_sidebar() {
+    register_sidebar( array(
+        'name'          => 'Custom Sidebar',
+        'id'            => 'custom-sidebar',
+        'description'   => 'Sidebar riêng để chứa widget',
+        'before_widget' => '<div class="widget">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h3 class="widget-title">',
+        'after_title'   => '</h3>',
+    ));
+}
+add_action( 'widgets_init', 'my_custom_sidebar' );
+// Tạo footer
+// Lấy ID trang "Footer Settings" theo slug, có fallback theo title
+// ---- CONFIG ----
+if (!defined('VE_FOOTER_PAGE_SLUG')) {
+  define('VE_FOOTER_PAGE_SLUG', 'footer-settings');
+}
+
+// Lấy ID trang "Footer Settings"
+if (!function_exists('ve_footer_settings_id')) {
+  function ve_footer_settings_id() {
+    $page = get_page_by_path(VE_FOOTER_PAGE_SLUG, OBJECT, 'page');
+    if ($page instanceof WP_Post) return (int)$page->ID;
+
+    $pages = get_posts([
+      'post_type'   => 'page',
+      'title'       => 'Footer Settings',
+      'post_status' => 'any',
+      'numberposts' => 1,
+    ]);
+    return $pages ? (int)$pages[0]->ID : 0;
+  }
+}
+
+// Helper: chuyển Image (Array/ID/URL) -> URL
+if (!function_exists('ve_img_url')) {
+  function ve_img_url($img) {
+    if (is_array($img) && !empty($img['url'])) return $img['url'];
+    if (is_numeric($img)) return wp_get_attachment_image_url((int)$img, 'full');
+    if (is_string($img))  return $img;
+    return '';
+  }
+}
+
+// (tùy chọn) helper đọc field theo trang Footer Settings
+if (!function_exists('ve_footer_get')) {
+  function ve_footer_get($key) {
+    $sid = ve_footer_settings_id();
+    $v = $sid ? get_field($key, $sid) : null;
+    if (!$v) $v = get_field($key, 'option');
+    return $v;
+  }
+}
+if (!function_exists('ve_footer_get_any')) {
+  function ve_footer_get_any(array $keys) {
+    foreach ($keys as $k) {
+      $v = ve_footer_get($k);
+      if (!empty($v)) return $v;
+    }
+    return null;
+  }
+}
+
+
+
+
+
+
+// // Tắt admin bar trên frontend
+add_filter('show_admin_bar', '__return_false');
