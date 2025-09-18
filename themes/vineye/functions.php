@@ -18,11 +18,17 @@ function vineye_enqueue_scripts() {
         null,
         true
     );
+     // (tuỳ chọn) JS đổi icon toggler
+      wp_enqueue_script(
+        'nav-toggle-icons',
+        get_stylesheet_directory_uri() . '/js/nav-toggle-icons.js',
+        ['bootstrap-bundle'], '1.0', true
+      );
 
     // Custom script
     wp_enqueue_script(
         'vineye-custom',
-        get_template_directory_uri() . '/assets/js/custom.js',
+        get_template_directory_uri() . '/js/custom.js',
         array('jquery'),
         null,
         true

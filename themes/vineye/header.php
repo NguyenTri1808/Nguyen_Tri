@@ -48,22 +48,20 @@
 
             <!-- Hamburger (ẩn desktop) -->
             <!-- Toggler -->
-<button class="navbar-toggler d-lg-none ms-auto"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#mainNav"
-        aria-controls="mainNav"
-        aria-expanded="false"
-        aria-label="<?php esc_attr_e('Mở menu', 'vineye'); ?>">
-  <span class="toggler-icon on"><i class="fa fa-bars" aria-hidden="true"></i></span>
-  <span class="toggler-icon off d-none"><i class="fa fa-times" aria-hidden="true"></i></span>
-</button>
+            <button class="navbar-toggler d-lg-none ms-auto show"
+                    type="button"
+                    data-bs-toggle="collapse"          
+                    data-bs-target="#mainNav"
+                    aria-controls="mainNav"
+                    aria-expanded="false"
+                    aria-label="<?php esc_attr_e('Mở menu','vineye'); ?>">
+              <span class="toggler-icon on"><i class="fa fa-bars" aria-hidden="true"></i></span>
+              <span class="toggler-icon off d-none"><i class="fa fa-times" aria-hidden="true"></i></span>
+            </button>
 
-<!-- Menu -->
-<div id="mainNav" class="collapse navbar-collapse">
-  <?php /* wp_nav_menu(...) */ ?>
-</div>
-
+            <div id="mainNav" class="collapse navbar-collapse">
+              <?php /* wp_nav_menu(...) */ ?>
+            </div>
           </div>
         </div>
       </div>
@@ -87,37 +85,145 @@
     </div>
   </nav>
 </header>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+<script>
+(function(){
+  var nav = document.getElementById('site-nav');
+  if(!nav) return;
+
+  var startTop = 0, navH = 0;
+
+  function computeStart(){
+    // vị trí nav so với đỉnh document & chiều cao hiện tại
+    var rect = nav.getBoundingClientRect();
+    startTop = rect.top + window.pageYOffset;
+    navH = nav.offsetHeight;
+  }
+
+  function stick(){
+    if(window.pageYOffset > startTop){
+      if(!nav.classList.contains('is-fixed')){
+        nav.classList.add('is-fixed');
+        document.body.style.paddingTop = navH + 'px'; // bù chỗ để không giật
+      }
+    }else{
+      if(nav.classList.contains('is-fixed')){
+        nav.classList.remove('is-fixed');
+        document.body.style.paddingTop = '';
+      }
+    }
+  }
+
+  // Khởi tạo
+  window.addEventListener('load', function(){
+    computeStart();
+    stick();
+  });
+  window.addEventListener('resize', function(){
+    // nếu đang fixed, cập nhật paddingTop theo chiều cao mới (mobile/desktop)
+    var wasFixed = nav.classList.contains('is-fixed');
+    document.body.style.paddingTop = '';
+    computeStart();
+    if(wasFixed){
+      nav.classList.add('is-fixed');
+      document.body.style.paddingTop = navH + 'px';
+    }
+  }, {passive:true});
+  window.addEventListener('scroll', stick, {passive:true});
+
+  // Nếu bạn dùng Bootstrap collapse cho #mainNav, cập nhật chiều cao khi mở/đóng (mobile)
+  if (window.bootstrap || window.jQuery){
+    var c = document.getElementById('mainNav');
+    if(c){
+      c.addEventListener('shown.bs.collapse', function(){
+        navH = nav.offsetHeight;
+        if(nav.classList.contains('is-fixed')){
+          document.body.style.paddingTop = navH + 'px';
+        }
+      });
+      c.addEventListener('hidden.bs.collapse', function(){
+        navH = nav.offsetHeight;
+        if(nav.classList.contains('is-fixed')){
+          document.body.style.paddingTop = navH + 'px';
+        }
+      });
+    }
+  }
+})();
+</script>
 <script>
 (function () {
-  const nav      = document.getElementById('mainNav');
-  const toggler  = document.querySelector('[data-bs-target="#mainNav"]');
-  if (!nav || !toggler) return;
+  // Nút toggler của bạn
+  var toggler = document.querySelector('.navbar-toggler[data-bs-target="#mainNav"]');
+  var target  = document.getElementById('mainNav');
+  if (!toggler || !target) return;
 
-  const bsColl   = bootstrap.Collapse.getOrCreateInstance(nav, { toggle: false });
-  const iconOn   = toggler.querySelector('.toggler-icon.on');   // bars
-  const iconOff  = toggler.querySelector('.toggler-icon.off');  // close
+  // Khởi tạo Collapse nhưng KHÔNG tự toggle
+  var coll = bootstrap.Collapse.getOrCreateInstance(target, { toggle: false });
 
-  // Đổi icon khi mở/đóng
-  nav.addEventListener('show.bs.collapse', () => {
-    iconOn.classList.add('d-none');
-    iconOff.classList.remove('d-none');
-    toggler.setAttribute('aria-expanded','true');
+  // Khi bấm nút: tự quyết định show/hide + set aria-expanded
+  toggler.addEventListener('click', function (e) {
+    // Ngăn Bootstrap data-API tự xử lý lần nữa (tránh “nháy”)
+    e.preventDefault();
+    e.stopPropagation();
+
+    var expanded = this.getAttribute('aria-expanded') === 'true';
+    if (expanded) {
+      coll.hide();
+    } else {
+      coll.show();
+    }
   });
-  nav.addEventListener('hide.bs.collapse', () => {
-    iconOn.classList.remove('d-none');
-    iconOff.classList.add('d-none');
-    toggler.setAttribute('aria-expanded','false');
+
+  // Đồng bộ aria-expanded + đổi icon khi mở
+  target.addEventListener('shown.bs.collapse', function () {
+    toggler.setAttribute('aria-expanded', 'true');
+    var on  = toggler.querySelector('.toggler-icon.on');
+    var off = toggler.querySelector('.toggler-icon.off');
+    if (on)  on.classList.add('d-none');
+    if (off) off.classList.remove('d-none');
   });
 
-  // Click vào link menu trên mobile thì auto đóng
-  document.querySelectorAll('#mainNav .nav-link').forEach(a => {
-    a.addEventListener('click', () => {
-      // chỉ đóng khi toggler đang hiển thị (mobile)
-      if (getComputedStyle(toggler).display !== 'none') {
-        bsColl.hide();
-      }
-    });
+  // Đồng bộ aria-expanded + đổi icon khi đóng
+  target.addEventListener('hidden.bs.collapse', function () {
+    toggler.setAttribute('aria-expanded', 'false');
+    var on  = toggler.querySelector('.toggler-icon.on');
+    var off = toggler.querySelector('.toggler-icon.off');
+    if (on)  on.classList.remove('d-none');
+    if (off) off.classList.add('d-none');
+  });
+
+  // (tuỳ chọn) đóng khi click ra ngoài vùng menu ở mobile
+  document.addEventListener('click', function (ev) {
+    var clickInsideMenu = target.contains(ev.target) || toggler.contains(ev.target);
+    if (!clickInsideMenu && target.classList.contains('show')) {
+      coll.hide();
+    }
   });
 })();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var toggler = document.querySelector('.navbar-toggler[data-bs-target="#mainNav"]');
+  var target  = document.getElementById('mainNav');
+  if (!toggler || !target) return;
+
+  target.addEventListener('shown.bs.collapse', function () {
+    toggler.setAttribute('aria-expanded', 'true');              // Bootstrap cũng tự set, đây là đồng bộ
+    var on  = toggler.querySelector('.toggler-icon.on');
+    var off = toggler.querySelector('.toggler-icon.off');
+    if (on)  on.classList.add('d-none');
+    if (off) off.classList.remove('d-none');
+  });
+
+  target.addEventListener('hidden.bs.collapse', function () {
+    toggler.setAttribute('aria-expanded', 'false');
+    var on  = toggler.querySelector('.toggler-icon.on');
+    var off = toggler.querySelector('.toggler-icon.off');
+    if (on)  on.classList.remove('d-none');
+    if (off) off.classList.add('d-none');
+  });
+});
 </script>
 

@@ -31,27 +31,44 @@ a { text-decoration:none; }
   content:"▾"; font-size:.8rem; margin-left:.25rem;
 }
 
-/* Sticky: luôn bám trên cùng */
-#site-nav.sticky-top {
-  position: sticky;     
-  top: 0;
-  z-index: 1050;
+/* ===== Sticky bằng JS (fixed khi cuộn) ===== */
+#site-nav{
   background:#fff;
+  z-index: 1090;                         /* trên slider/banner */
+  transition: box-shadow .18s ease, background .18s ease;
+  overflow: visible;                      /* để dropdown không bị cắt */
+  border-top: none;
+  height: 4rem;
 }
-/* Nav cố định khi thêm .is-fixed */
-/* #site-nav.is-fixed{
-  position: fixed; top:0; left:0; right:0;
-  z-index:1050; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.08);
-} */
-/* Spacer giữ chỗ khi nav fixed */
-.header-spacer{ display:none; height:var(--nav-h,64px); }
-#site-nav.is-fixed + .header-spacer{ display:block; }
 
-/* Đổ bóng khi cuộn (có JS gắn .is-stuck) */
-#site-nav.is-stuck { box-shadow:0 8px 24px rgba(0,0,0,.08); }
+/* Khi trở thành sticky */
+#site-nav.is-fixed{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
 
-/* Thu gọn padding khi dính (optional) */
-#site-nav.is-stuck .navbar-nav > li > a { padding-top:.75rem; padding-bottom:.75rem; }
+/* Nếu đang đăng nhập WordPress (có admin bar) */
+.admin-bar #site-nav.is-fixed{ top:32px; }
+@media (max-width:782px){
+  .admin-bar #site-nav.is-fixed{ top:46px; }
+}
+
+/* Bóng nhẹ khi đã cuộn >10px (JS sẽ thêm .is-stuck) */
+#site-nav.is-stuck{ box-shadow:0 8px 24px rgba(0,0,0,.08); }
+
+/* Dropdown/mega menu luôn nổi trên */
+#site-nav .dropdown-menu{ z-index: 1091; }
+
+/* Đảm bảo section container vẫn nền trắng khi fixed */
+#site-nav .container, 
+#site-nav .container-fluid{ background:#fff; }
+
+/* Thu gọn padding khi sticky (tuỳ chọn) */
+#site-nav.is-fixed .navbar-nav > li > a{
+  padding-top:.75rem; padding-bottom:.75rem;
+}
 
 /* Dropdown bằng hover (desktop) */
 @media (min-width:992px){
@@ -72,38 +89,29 @@ a { text-decoration:none; }
 
 /* =================== MOBILE =================== */
 @media (max-width:991.98px){
-  /* Hàng chứa search + toggler */
   .header-tools{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    /* bỏ position absolute ở toggler để không bị “lạc chỗ” */
+    display:flex; align-items:center; gap:12px;
   }
   .header-tools .header-search{ flex:1; }
   .header-tools .header-search .search-wrap{ position:relative; }
   .header-tools .header-search .form-control{
     width:100%;
-    border:0;
-    border-bottom:1px solid #e5e7eb;
-    border-radius:0;
+    border:0; border-bottom:1px solid #e5e7eb; border-radius:0;
     padding:10px 40px 10px 0;
   }
   .header-tools .header-search .form-control::placeholder{ color:#9aa3af; }
   .header-tools .header-search .form-control:focus{ box-shadow:none; border-color:var(--brand); }
 
-  /* Nút menu TRÊN CÙNG 1 HÀNG với ô tìm kiếm, KHÔNG absolute */
+  /* Toggler không absolute để khỏi "lạc chỗ" */
   .header-tools .navbar-toggler{
-    position:static;             /* quan trọng: bỏ absolute */
-    padding:9px 12px;
-    border:1px solid #000;
-    border-radius:12px;
-    background:#fff;
-    line-height:1;
-    margin-left:8px;
+    position:static;
+    padding:9px 12px; border:1px solid #000; border-radius:12px;
+    background:#fff; line-height:1; margin-left:8px;
   }
   .navbar .navbar-toggler{ margin-left:0; }
 }
 /* ======================= END HEADER ======================= */
+
 
 
 /* ---------------------------------------------BEGIN HOME PAGE--------------------------------------------------- */
@@ -167,7 +175,7 @@ a { text-decoration:none; }
     display: flex;
 }
 .partner-logos{
-    padding: 1% 5% 5% 5%;
+    padding: 1% 5%;
 }
 .title-baochi{
     display: flex;
@@ -446,7 +454,7 @@ a { text-decoration:none; }
 }
 
 .ketqua-left img.ketqua-big{
-  width:100%;
+  width:96%;
   display:block;
   border-radius:12px;
   object-fit:cover;
@@ -474,6 +482,11 @@ a { text-decoration:none; }
 #box-khuyenmai{
     margin-top: 50px;
     margin-bottom: 50px;
+}
+.page-numbers{
+  display: flex;
+  gap: 1rem;
+  list-style: none;
 }
 /* END HOME PAGE */
 
