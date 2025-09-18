@@ -32,17 +32,17 @@ a { text-decoration:none; }
 }
 
 /* Sticky: luôn bám trên cùng */
-/* #site-nav.sticky-top {
+#site-nav.sticky-top {
   position: sticky;     
   top: 0;
   z-index: 1050;
   background:#fff;
-} */
+}
 /* Nav cố định khi thêm .is-fixed */
-#site-nav.is-fixed{
+/* #site-nav.is-fixed{
   position: fixed; top:0; left:0; right:0;
   z-index:1050; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.08);
-}
+} */
 /* Spacer giữ chỗ khi nav fixed */
 .header-spacer{ display:none; height:var(--nav-h,64px); }
 #site-nav.is-fixed + .header-spacer{ display:block; }
@@ -167,7 +167,7 @@ a { text-decoration:none; }
     display: flex;
 }
 .partner-logos{
-    padding: 10% 5% 5% 5%;
+    padding: 1% 5% 5% 5%;
 }
 .title-baochi{
     display: flex;
@@ -492,6 +492,33 @@ a { text-decoration:none; }
     align-content: center;
     margin-bottom: 5px;
     padding: 5px 0px 5px 10px;
+}
+/*------------------------------------------------------------ END GIOI THIEU PAGE ------------------------------------------------------------*/
+/*------------------------------------------------------------ BEGIN LIEN HE PAGE ------------------------------------------------------------*/
+:root { --brand:#1f4aa8; }
+
+.contact-left-title { color:#0b2d74; letter-spacing:.5px; }
+
+.contact-left-content p {
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+  color: #1e2a3a;
+}
+
+/* Kiểu label: Địa chỉ / Hotline / Email đậm, giống ảnh */
+.contact-left-content p strong {
+  color:#132c78;
+}
+
+/* Tiêu đề map giống trái */
+.contact-section h2 { color:#0b2d74; }
+
+/* Tùy chọn: icon/căn lề nếu bạn muốn thêm */
+.contact-left-content .item { margin-bottom: 1rem; }
+.bg-contact {
+  background-color: #203b87;
+  background-size: cover;
+  padding: 60px 0;
 }
 
 /*------------------------------------------------------------ BEGIN FOOTER ---------------------------------------------------------------------------*/

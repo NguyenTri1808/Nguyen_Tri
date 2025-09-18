@@ -47,15 +47,23 @@
             </form>
 
             <!-- Hamburger (ẩn desktop) -->
-            <button class="navbar-toggler d-lg-none ms-auto"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#mainNav"
-                    aria-controls="mainNav"
-                    aria-expanded="false"
-                    aria-label="<?php esc_attr_e('Mở menu', 'vineye'); ?>">
-              <span class="navbar-toggler-icon"></span>
-            </button>
+            <!-- Toggler -->
+<button class="navbar-toggler d-lg-none ms-auto"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNav"
+        aria-controls="mainNav"
+        aria-expanded="false"
+        aria-label="<?php esc_attr_e('Mở menu', 'vineye'); ?>">
+  <span class="toggler-icon on"><i class="fa fa-bars" aria-hidden="true"></i></span>
+  <span class="toggler-icon off d-none"><i class="fa fa-times" aria-hidden="true"></i></span>
+</button>
+
+<!-- Menu -->
+<div id="mainNav" class="collapse navbar-collapse">
+  <?php /* wp_nav_menu(...) */ ?>
+</div>
+
           </div>
         </div>
       </div>
@@ -79,3 +87,37 @@
     </div>
   </nav>
 </header>
+<script>
+(function () {
+  const nav      = document.getElementById('mainNav');
+  const toggler  = document.querySelector('[data-bs-target="#mainNav"]');
+  if (!nav || !toggler) return;
+
+  const bsColl   = bootstrap.Collapse.getOrCreateInstance(nav, { toggle: false });
+  const iconOn   = toggler.querySelector('.toggler-icon.on');   // bars
+  const iconOff  = toggler.querySelector('.toggler-icon.off');  // close
+
+  // Đổi icon khi mở/đóng
+  nav.addEventListener('show.bs.collapse', () => {
+    iconOn.classList.add('d-none');
+    iconOff.classList.remove('d-none');
+    toggler.setAttribute('aria-expanded','true');
+  });
+  nav.addEventListener('hide.bs.collapse', () => {
+    iconOn.classList.remove('d-none');
+    iconOff.classList.add('d-none');
+    toggler.setAttribute('aria-expanded','false');
+  });
+
+  // Click vào link menu trên mobile thì auto đóng
+  document.querySelectorAll('#mainNav .nav-link').forEach(a => {
+    a.addEventListener('click', () => {
+      // chỉ đóng khi toggler đang hiển thị (mobile)
+      if (getComputedStyle(toggler).display !== 'none') {
+        bsColl.hide();
+      }
+    });
+  });
+})();
+</script>
+

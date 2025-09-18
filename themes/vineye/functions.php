@@ -273,6 +273,55 @@ if (!function_exists('ve_footer_get_any')) {
   }
 }
 
+// ============ ACF: lien_he (left_content + map) ============
+add_action('acf/init', function () {
+  if (!function_exists('acf_add_local_field_group')) return;
+
+  acf_add_local_field_group([
+    'key'    => 'group_lien_he',
+    'title'  => 'Liên hệ',
+    'fields' => [
+      [
+        'key'   => 'field_lh_left',
+        'label' => 'Left content',
+        'name'  => 'left_content',
+        'type'  => 'group',
+        'sub_fields' => [
+          [
+            'key'   => 'field_lh_left_title',
+            'label' => 'Title',
+            'name'  => 'title',
+            'type'  => 'text',
+            'default_value' => 'BỆNH VIỆN QUỐC TẾ VINEYES',
+          ],
+          [
+            'key'   => 'field_lh_left_content',
+            'label' => 'Content',
+            'name'  => 'content',
+            'type'  => 'wysiwyg',   // hoặc 'textarea' nếu bạn muốn đơn giản
+            'tabs'  => 'all',
+            'media_upload' => 0,
+          ],
+        ],
+      ],
+      [
+        'key'   => 'field_lh_map',
+        'label' => 'Map (Google Maps iframe)',
+        'name'  => 'map',
+        'type'  => 'textarea',
+        'instructions' => 'Dán thẳng mã <iframe> embed Google Maps vào đây.',
+      ],
+      [
+        'key'   => 'field_lh_map_title',
+        'label' => 'Map title',
+        'name'  => 'map_title',
+        'type'  => 'text',
+        'default_value' => 'BẢN ĐỒ GOOGLE MAPS',
+      ],
+    ],
+    'location' => [[['param'=>'page_template','operator'=>'==','value'=>'page-contact-simple.php']]],
+  ]);
+});
 
 
 
