@@ -3,54 +3,36 @@ name: Deploy theme to VPS
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - "themes/**"
+    paths: [ "themes/**" ]
   workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
 
-      # Dùng PRIVATE KEY OpenSSH (đa dòng) từ secret
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add known_hosts
+      - name: Setup SSH (agent + key from base64)
         shell: bash
         run: |
           set -euo pipefail
+          eval "$(ssh-agent -s)"
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          ssh-add ~/.ssh/id_ci
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # DEBUG: in fingerprint & public key để đối chiếu với server
-      - name: Show key fingerprint & public key (debug)
-        shell: bash
-        run: |
-          set -euo pipefail
-          # tạo file từ secret để soi (không ảnh hưởng agent)
-          printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' | sed 's/\\r//g; s/\\n/\n/g' > ~/.ssh/id_ci
-          chmod 600 ~/.ssh/id_ci
-          echo "== HEADER =="; head -n1 ~/.ssh/id_ci
-          echo "== FINGERPRINT =="; ssh-keygen -lf ~/.ssh/id_ci
-          echo "== PUBLIC KEY =="; ssh-keygen -y -f ~/.ssh/id_ci
+      - name: Show key fingerprint (debug)
+        run: ssh-keygen -lf ~/.ssh/id_ci
 
-      - name: Test SSH with our key (vvv)
-        shell: bash
+      - name: Test SSH (vvv)
         run: |
           ssh -vvv -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            'whoami && hostname'
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'whoami && hostname'
 
-      # 1) Upload themes -> thư mục tạm của user (không sudo)
       - name: Upload themes to tmp (no sudo)
         shell: bash
         run: |
@@ -58,19 +40,16 @@ jobs:
           echo "Host='${{ secrets.SSH_HOST }}' User='${{ secrets.SSH_USER }}' Port='${{ secrets.SSH_PORT }}'"
           REMOTE_TMP='$HOME/deploy_tmp/themes'
           ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "mkdir -p ${REMOTE_TMP}"
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "mkdir -p ${REMOTE_TMP}"
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
             --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
             themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${REMOTE_TMP}/"
 
-      # 2) Từ tmp -> TARGET_DIR (sudo), set quyền & reload PHP
       - name: Move to target with sudo & fix permissions
         shell: bash
-        env:
-          TARGET_DIR: ${{ secrets.TARGET_DIR }}
+        env: { TARGET_DIR: ${{ secrets.TARGET_DIR }} }
         run: |
           set -euo pipefail
           ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
@@ -78,14 +57,11 @@ jobs:
           set -e
           REMOTE_TMP="$HOME/deploy_tmp/themes"
           TARGET="${TARGET_DIR}/wp-content/themes"
-
           sudo mkdir -p "$TARGET"
           sudo rsync -a --delete "$REMOTE_TMP"/ "$TARGET"/
-
           sudo chown -R www-data:www-data "$TARGET"
           sudo find "$TARGET" -type d -exec chmod 755 {} \;
           sudo find "$TARGET" -type f -exec chmod 644 {} \;
-
           sudo systemctl reload php8.2-fpm || sudo systemctl reload php8.1-fpm || true
           sudo systemctl reload nginx || sudo systemctl reload apache2 || true
           EOF
