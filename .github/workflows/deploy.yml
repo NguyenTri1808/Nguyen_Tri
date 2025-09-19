@@ -14,32 +14,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      # 1) Viết private key từ secret ra file, CHUẨN HOÁ \n và loại CRLF
+      - name: Write SSH key from raw secret (normalize)
+        shell: bash
+        run: |
+          umask 177
+          KEY="${{ secrets.SSH_PRIVATE_KEY }}"
+          if echo "$KEY" | grep -q '\\n'; then
+            # Secret đang có chuỗi "\n" literal -> chuyển thành newline thật
+            printf "%s" "$KEY" | sed 's/\\r//g; s/\\n/\n/g' > /tmp/ci_key
+          else
+            # Secret đã có newline đúng -> ghi thẳng
+            printf "%s" "$KEY" > /tmp/ci_key
+          fi
+          # Xoá CR nếu bị CRLF
+          sed -i 's/\r$//' /tmp/ci_key
+          chmod 600 /tmp/ci_key
 
+      # 2) Kiểm tra key (giúp đối chiếu với server)
+      - name: Show key fingerprint (debug)
+        run: |
+          echo "Head:"; head -n1 /tmp/ci_key
+          echo "Tail:"; tail -n1 /tmp/ci_key
+          echo "Fingerprint:"; ssh-keygen -lf /tmp/ci_key
+          echo "Derived public key:"; ssh-keygen -y -f /tmp/ci_key
+
+      # 3) Thêm known_hosts
       - name: Add known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # Debug: in fingerprint & public key CI đang dùng
-      - name: Show key fingerprint (debug)
-        run: |
-          umask 177
-          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ci_key
-          echo "Fingerprint:"
-          ssh-keygen -lf /tmp/ci_key || true
-          echo "Derived public key:"
-          ssh-keygen -y -f /tmp/ci_key
-
+      # 4) Thử SSH
       - name: Verify SSH connectivity
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+          ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} \
+            -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo SSH_OK'
 
+      # 5) Rsync wp-content (exclude uploads/cache)
       - name: Rsync wp-content (exclude uploads/cache)
         env:
           RSYNC_EXCLUDES: "--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
@@ -47,13 +61,14 @@ jobs:
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
             $RSYNC_EXCLUDES \
-            -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes" \
+            -e "ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes" \
             --rsync-path="sudo rsync" \
             wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
 
+      # 6) Chỉnh quyền & reload PHP-FPM
       - name: Fix permissions & reload services
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+          ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "sudo chown -R www-data:www-data '${{ secrets.TARGET_DIR }}/wp-content' && \
              sudo find '${{ secrets.TARGET_DIR }}/wp-content' -type d -exec chmod 755 {} \; && \
