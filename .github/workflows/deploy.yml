@@ -1,11 +1,9 @@
-name: Deploy wp-content to VPS
+name: Deploy to VPS
 
 on:
   push:
-    branches: [ "main" ]         # đổi nếu bạn dùng branch khác
-    paths:
-      - "wp-content/**"          # chỉ chạy khi có thay đổi trong wp-content
-  workflow_dispatch: {}           # cho phép chạy tay
+    branches: [ "main" ]   # đổi branch nếu bạn dùng nhánh khác
+  workflow_dispatch: {}     # cho phép bấm chạy tay
 
 jobs:
   deploy:
@@ -15,61 +13,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1) Khởi động ssh-agent & nạp private key (lấy từ secret base64)
-      - name: Setup SSH (agent + key)
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval "$(ssh-agent -s)"
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Add known_hosts
+        run: |
           mkdir -p ~/.ssh
-          # Giải mã secret base64 thành private key
-          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci
-          chmod 600 ~/.ssh/id_ci
-          ssh-add ~/.ssh/id_ci
+          echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-          # Add host vào known_hosts để StrictHostKeyChecking=yes không chặn
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-
-      # 2) Kiểm tra kết nối SSH (debug)
-      - name: Test SSH connectivity
+      # Đồng bộ code sang VPS (TRỪ uploads, cache, .git…)
+      - name: Rsync code
         run: |
-          ssh -o StrictHostKeyChecking=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            'whoami && hostname'
-
-      # 3) Rsync wp-content (trừ uploads/cache)
-      - name: Rsync wp-content (exclude uploads/cache)
-        run: |
-          RSYNC_EXCLUDES=(
-            "--exclude uploads"
-            "--exclude cache"
-            "--exclude .git"
-            "--exclude .github"
-            "--exclude node_modules"
-          )
-          rsync -az --delete \
-            --omit-dir-times --no-perms --no-owner --no-group \
-            ${RSYNC_EXCLUDES[@]} \
+          RSYNC_EXCLUDES="--exclude '.git' --exclude '.github' --exclude 'node_modules' --exclude '.env' --exclude 'wp-content/uploads' --exclude 'wp-content/cache'"
+          rsync -az --delete $RSYNC_EXCLUDES \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/
 
-      # 4) (Tuỳ chọn) Chỉnh quyền & reload PHP-FPM nếu cần
-      #   Nếu user của bạn không có quyền ghi vào TARGET_DIR, hãy:
-      #   - cấp quyền thư mục cho user đó, hoặc
-      #   - thay rsync phía trên bằng --rsync-path="sudo rsync" và cấu hình sudo NOPASSWD cho rsync.
-      - name: Fix permissions & reload services (optional)
-        if: ${{ env.NEED_POSTFIX == '1' }}
-        env:
-          NEED_POSTFIX: "0"    # đổi sang "1" nếu muốn chạy khối này
+      # Chạy lệnh sau deploy trên VPS (tuỳ chọn)
+      - name: Post-deploy commands
         run: |
-          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
-          set -e
-          TARGET_DIR="${TARGET_DIR}"
-          sudo chown -R www-data:www-data "$TARGET_DIR/wp-content"
-          sudo find "$TARGET_DIR/wp-content" -type d -exec chmod 755 {} \;
-          sudo find "$TARGET_DIR/wp-content" -type f -exec chmod 644 {} \;
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          # quyền file/folder chuẩn
+          sudo find /var/www/minhtris.id.vn/peugeot -type d -exec chmod 755 {} \;
+          sudo find /var/www/minhtris.id.vn/peugeot -type f -exec chmod 644 {} \;
+          sudo chown -R www-data:www-data /var/www/minhtris.id.vn/peugeot
+
+          # (tuỳ) build front-end nếu có
+          # cd /var/www/minhtris.id.vn/peugeot/wp-content/themes/ten-theme && npm ci && npm run build
+
+          # reload PHP/Nginx (nhanh, không downtime)
           sudo systemctl reload php8.1-fpm || true
+          sudo systemctl reload nginx || true
           EOF
-        env:
-          TARGET_DIR: "${{ secrets.TARGET_DIR }}"
