@@ -14,48 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write SSH key from raw secret (normalize)
-        shell: bash
-        run: |
-          umask 177
-          KEY="${{ secrets.SSH_PRIVATE_KEY }}"
-          if echo "$KEY" | grep -q '\\n'; then
-            printf "%s" "$KEY" | sed 's/\\r//g; s/\\n/\n/g' > /tmp/ci_key
-          else
-            printf "%s" "$KEY" > /tmp/ci_key
-          fi
-          sed -i 's/\r$//' /tmp/ci_key
-          chmod 600 /tmp/ci_key
-      
-      - name: Show key fingerprint (debug)
-        run: |
-          echo "Fingerprint:"; ssh-keygen -lf /tmp/ci_key
-          echo "Derived public key:"; ssh-keygen -y -f /tmp/ci_key
-      
-      - name: Verify SSH connectivity
-        run: |
-          ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} \
-            -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo SSH_OK'
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      
-      - name: Rsync wp-content (exclude uploads/cache)
-        env:
-          RSYNC_EXCLUDES: "--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
+      - name: Add known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy wp-content (rsync)
         run: |
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
-            $RSYNC_EXCLUDES \
-            -e "ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes" \
+            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
             --rsync-path="sudo rsync" \
-            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
-
-      # 6) Chỉnh quyền & reload PHP-FPM
-      - name: Fix permissions & reload services
-        run: |
-          ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "sudo chown -R www-data:www-data '${{ secrets.TARGET_DIR }}/wp-content' && \
-             sudo find '${{ secrets.TARGET_DIR }}/wp-content' -type d -exec chmod 755 {} \; && \
-             sudo find '${{ secrets.TARGET_DIR }}/wp-content' -type f -exec chmod 644 {} \; && \
-             sudo systemctl reload php8.1-fpm || true"
+            wp-content/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content
