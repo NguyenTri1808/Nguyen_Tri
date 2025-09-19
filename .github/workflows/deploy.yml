@@ -21,15 +21,20 @@ jobs:
           umask 177
           KEY="${{ secrets.SSH_PRIVATE_KEY }}"
           if echo "$KEY" | grep -q '\\n'; then
-            # Secret đang có chuỗi "\n" literal -> chuyển thành newline thật
+            # Secret có \n literal -> đổi thành newline thật
             printf "%s" "$KEY" | sed 's/\\r//g; s/\\n/\n/g' > /tmp/ci_key
           else
-            # Secret đã có newline đúng -> ghi thẳng
+            # Secret đã multiline đúng -> ghi thẳng
             printf "%s" "$KEY" > /tmp/ci_key
           fi
-          # Xoá CR nếu bị CRLF
+          # Loại CR nếu bị CRLF
           sed -i 's/\r$//' /tmp/ci_key
           chmod 600 /tmp/ci_key
+      
+      - name: Show key fingerprint (debug)
+        run: |
+          echo "Fingerprint:"; ssh-keygen -lf /tmp/ci_key || (echo "Key sai định dạng"; exit 1)
+          echo "Derived public key:"; ssh-keygen -y -f /tmp/ci_key
 
       # 2) Kiểm tra key (giúp đối chiếu với server)
       - name: Show key fingerprint (debug)
@@ -46,14 +51,12 @@ jobs:
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # 4) Thử SSH
       - name: Verify SSH connectivity
         run: |
           ssh -i /tmp/ci_key -p ${{ secrets.SSH_PORT }} \
             -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo SSH_OK'
-
-      # 5) Rsync wp-content (exclude uploads/cache)
+      
       - name: Rsync wp-content (exclude uploads/cache)
         env:
           RSYNC_EXCLUDES: "--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
