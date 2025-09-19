@@ -17,7 +17,7 @@ jobs:
 
       # (Tuỳ chọn) build front-end cho theme nếu bạn có package.json
       # - name: Build theme assets
-      #   working-directory: wp-content/themes/vinyey
+      #   working-directory: wp-content/themes/vineye
       #   run: |
       #     npm ci
       #     npm run build
