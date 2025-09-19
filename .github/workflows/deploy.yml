@@ -2,25 +2,21 @@ name: Deploy wp-content to VPS
 
 on:
   push:
-    branches: [ "main" ]           # sửa nếu bạn dùng branch khác
+    branches: [ "main" ]           # đổi nếu dùng branch khác
     paths:
-      - 'wp-content/**'            # CHỈ chạy khi có thay đổi trong wp-content
-  workflow_dispatch: {}            # cho phép chạy tay
+      - 'wp-content/**'            # chỉ chạy khi wp-content thay đổi
+  workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # (Tuỳ chọn) build front-end cho theme nếu bạn có package.json
-      # - name: Build theme assets
-      #   working-directory: wp-content/themes/wonderland
-      #   run: |
-      #     npm ci
-      #     npm run build
+        with:
+          fetch-depth: 1
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -30,26 +26,48 @@ jobs:
       - name: Add known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Rsync wp-content (exclude uploads/cache)
+      - name: Quick SSH check
         run: |
-          RSYNC_EXCLUDES="--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
-          rsync -az --delete \
+          ssh -o BatchMode=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'echo "SSH OK: $(hostname)"'
+
+      # 1) Upload toàn bộ wp-content (trừ uploads/cache) vào thư mục tạm trong HOME user
+      - name: Upload wp-content to tmp (no sudo)
+        run: |
+          EXCLUDES="--exclude uploads --exclude cache --exclude .git --exclude .github --exclude node_modules"
+          TMP_DIR="~/deploy_tmp/wp-content"
+          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "mkdir -p $TMP_DIR"
+          rsync -az --delete $EXCLUDES \
             --omit-dir-times --no-perms --no-owner --no-group \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            --rsync-path="sudo rsync" \
-            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/
+            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$TMP_DIR/"
 
-
-      - name: Fix permissions & reload services (optional)
+      # 2) Từ tmp -> TARGET_DIR/wp-content (có sudo), vẫn exclude uploads/cache để không xoá media
+      - name: Move to target with sudo & set permissions
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          sudo chown -R www-data:www-data /var/www/trisnguyen.id.vn/project_wp_nc/wp-content
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content -type d -exec chmod 755 {} \;
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content -type f -exec chmod 644 {} \;
-          # nếu theme dùng PHP template mới, reload PHP-FPM cho chắc:
-          sudo systemctl reload php8.1-fpm || true
+          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<'EOF'
+          set -euo pipefail
+          TMP_DIR="$HOME/deploy_tmp/wp-content"
+          TARGET="${{ secrets.TARGET_DIR }}/wp-content"
+
+          sudo mkdir -p "$TARGET"
+
+          # rsync giữ sạch nhưng không đụng uploads/cache
+          sudo rsync -a --delete \
+            --exclude uploads --exclude cache \
+            "$TMP_DIR"/ "$TARGET"/
+
+          # Quyền chuẩn WP
+          sudo chown -R www-data:www-data "$TARGET"
+          sudo find "$TARGET" -type d -exec chmod 755 {} \;
+          sudo find "$TARGET" -type f -exec chmod 644 {} \;
+
+          # Reload dịch vụ (tùy phiên bản)
+          (sudo systemctl reload php8.2-fpm || sudo systemctl reload php8.1-fpm || true)
+          (sudo systemctl reload nginx || sudo systemctl reload apache2 || true)
+
+          echo "Deploy done: $(date -Is)"
           EOF
