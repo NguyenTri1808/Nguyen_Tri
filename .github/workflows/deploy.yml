@@ -2,17 +2,25 @@ name: Deploy wp-content to VPS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]           # sửa nếu bạn dùng branch khác
     paths:
-      - 'wp-content/**'
-  workflow_dispatch: {}
+      - 'wp-content/**'            # CHỈ chạy khi có thay đổi trong wp-content
+  workflow_dispatch: {}            # cho phép chạy tay
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (Tuỳ chọn) build front-end cho theme nếu bạn có package.json
+      # - name: Build theme assets
+      #   working-directory: wp-content/themes/vineye
+      #   run: |
+      #     npm ci
+      #     npm run build
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -22,14 +30,26 @@ jobs:
       - name: Add known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Deploy wp-content (rsync)
+      - name: Rsync wp-content (exclude uploads/cache)
         run: |
+          RSYNC_EXCLUDES="--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
             --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
             --rsync-path="sudo rsync" \
-            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
+            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/
+
+
+      - name: Fix permissions & reload services (optional)
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          sudo chown -R www-data:www-data /var/www/travelblog.id.vn/wonderland/wp-content
+          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content -type d -exec chmod 755 {} \;
+          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content -type f -exec chmod 644 {} \;
+          # nếu theme dùng PHP template mới, reload PHP-FPM cho chắc:
+          sudo systemctl reload php8.1-fpm || true
+          EOF
