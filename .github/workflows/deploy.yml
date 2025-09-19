@@ -2,10 +2,10 @@ name: Deploy wp-content to VPS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]         # đổi nếu bạn dùng branch khác
     paths:
-      - 'wp-content/**'
-  workflow_dispatch: {}
+      - "wp-content/**"          # chỉ chạy khi có thay đổi trong wp-content
+  workflow_dispatch: {}           # cho phép chạy tay
 
 jobs:
   deploy:
@@ -15,42 +15,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Nếu có build asset cho theme thì bật khối này
-      # - name: Build theme assets
-      #   working-directory: wp-content/themes/vineye
-      #   run: |
-      #     npm ci
-      #     npm run build
-
-      # Cách chắc chắn: tự khởi động ssh-agent và nạp key đã chuẩn hoá
-      - name: Setup SSH (start agent & add key)
+      # 1) Khởi động ssh-agent & nạp private key (lấy từ secret base64)
+      - name: Setup SSH (agent + key)
         shell: bash
         run: |
           set -euo pipefail
           eval "$(ssh-agent -s)"
 
-          # Trường hợp bạn lỡ lưu secret ở dạng 1 dòng có \n: chuyển \n -> newline.
-          # Nếu secret đã đúng dạng đa dòng thì câu lệnh này vẫn an toàn.
           mkdir -p ~/.ssh
-          printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' | sed 's/\\r//g; s/\\n/\n/g' > ~/.ssh/id_ci
+          # Giải mã secret base64 thành private key
+          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci
           chmod 600 ~/.ssh/id_ci
           ssh-add ~/.ssh/id_ci
 
-          # known_hosts
+          # Add host vào known_hosts để StrictHostKeyChecking=yes không chặn
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Derive public key (debug)
-        run: |
-          set -e
-          ssh-keygen -y -f ~/.ssh/id_ci > /tmp/ci_key.pub
-          echo "== BEGIN PUBKEY ==" && cat /tmp/ci_key.pub && echo "== END PUBKEY =="
-
+      # 2) Kiểm tra kết nối SSH (debug)
       - name: Test SSH connectivity
         run: |
-          ssh -vvv -o StrictHostKeyChecking=yes -p "${{ secrets.SSH_PORT }}" \
+          ssh -o StrictHostKeyChecking=yes -p "${{ secrets.SSH_PORT }}" \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             'whoami && hostname'
 
+      # 3) Rsync wp-content (trừ uploads/cache)
       - name: Rsync wp-content (exclude uploads/cache)
         run: |
           RSYNC_EXCLUDES=(
@@ -64,16 +52,23 @@ jobs:
             --omit-dir-times --no-perms --no-owner --no-group \
             ${RSYNC_EXCLUDES[@]} \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            --rsync-path="sudo rsync" \
             wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
 
+      # 4) (Tuỳ chọn) Chỉnh quyền & reload PHP-FPM nếu cần
+      #   Nếu user của bạn không có quyền ghi vào TARGET_DIR, hãy:
+      #   - cấp quyền thư mục cho user đó, hoặc
+      #   - thay rsync phía trên bằng --rsync-path="sudo rsync" và cấu hình sudo NOPASSWD cho rsync.
       - name: Fix permissions & reload services (optional)
+        if: ${{ env.NEED_POSTFIX == '1' }}
+        env:
+          NEED_POSTFIX: "0"    # đổi sang "1" nếu muốn chạy khối này
         run: |
           ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
           set -e
-          sudo chown -R www-data:www-data ${TARGET_DIR}/wp-content
-          sudo find ${TARGET_DIR}/wp-content -type d -exec chmod 755 {} \;
-          sudo find ${TARGET_DIR}/wp-content -type f -exec chmod 644 {} \;
+          TARGET_DIR="${TARGET_DIR}"
+          sudo chown -R www-data:www-data "$TARGET_DIR/wp-content"
+          sudo find "$TARGET_DIR/wp-content" -type d -exec chmod 755 {} \;
+          sudo find "$TARGET_DIR/wp-content" -type f -exec chmod 644 {} \;
           sudo systemctl reload php8.1-fpm || true
           EOF
         env:
