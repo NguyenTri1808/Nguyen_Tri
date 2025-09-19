@@ -1,0 +1,76 @@
+name: Deploy WordPress Theme to VPS
+
+on:
+  push:
+    branches: [ "main" ]         # đổi nếu bạn dùng branch khác
+    paths:
+      - 'themes/**'              # chỉ chạy khi thư mục themes thay đổi
+  workflow_dispatch: {}          # cho phép chạy tay
+
+concurrency:
+  group: deploy-theme-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Quick SSH ping (optional but helpful)
+        run: |
+          ssh -o BatchMode=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'echo "SSH OK: $(hostname)"'
+
+      # 1) Đồng bộ themes lên thư mục tạm của user trên VPS (không cần sudo)
+      - name: Upload themes to tmp
+        run: |
+          TMP_DIR="~/deploy_tmp/themes"
+          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "mkdir -p $TMP_DIR"
+          rsync -az --delete \
+            --omit-dir-times --no-perms --no-owner --no-group \
+            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
+            themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$TMP_DIR/"
+
+      # 2) Từ tmp -> thư mục themes thật (có sudo), set quyền & reload dịch vụ
+      - name: Move to target with sudo & fix permissions
+        run: |
+          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<'EOF'
+          set -euo pipefail
+          TMP_DIR="$HOME/deploy_tmp/themes"
+          TARGET="${{ secrets.TARGET_DIR }}/wp-content/themes"
+
+          # Tạo thư mục đích
+          sudo mkdir -p "$TARGET"
+
+          # Rsync giữ sạch (xóa file thừa), copy toàn bộ themes
+          sudo rsync -a --delete "$TMP_DIR"/ "$TARGET"/
+
+          # Quyền & quyền hạn chuẩn cho WordPress
+          sudo chown -R www-data:www-data "$TARGET"
+          sudo find "$TARGET" -type d -exec chmod 755 {} \;
+          sudo find "$TARGET" -type f -exec chmod 644 {} \;
+
+          # Reload PHP-FPM & web server (tùy phiên bản, ignore error nếu service không tồn tại)
+          (sudo systemctl reload php8.2-fpm || sudo systemctl reload php8.1-fpm || true)
+          (sudo systemctl reload nginx || sudo systemctl reload apache2 || true)
+
+          echo "Deploy done: $(date -Is)"
+          EOF
