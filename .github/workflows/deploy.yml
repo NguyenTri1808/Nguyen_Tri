@@ -1,22 +1,19 @@
-name: Deploy wp-content to VPS
+name: Deploy theme to VPS
 
 on:
   push:
-    branches: [ "main" ]           # đổi nếu dùng branch khác
+    branches: [ "main" ]               # đổi nếu bạn dùng branch khác
     paths:
-      - 'wp-content/**'            # chỉ chạy khi wp-content thay đổi
+      - 'themes/**'                    # chỉ chạy khi có thay đổi trong themes
   workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -26,48 +23,23 @@ jobs:
       - name: Add known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Quick SSH check
+      - name: Rsync only themes (with sudo on remote)
         run: |
-          ssh -o BatchMode=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'echo "SSH OK: $(hostname)"'
-
-      # 1) Upload toàn bộ wp-content (trừ uploads/cache) vào thư mục tạm trong HOME user
-      - name: Upload wp-content to tmp (no sudo)
-        run: |
-          EXCLUDES="--exclude uploads --exclude cache --exclude .git --exclude .github --exclude node_modules"
-          TMP_DIR="~/deploy_tmp/wp-content"
-          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "mkdir -p $TMP_DIR"
-          rsync -az --delete $EXCLUDES \
+          rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
+            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$TMP_DIR/"
+            --rsync-path="sudo rsync" \
+            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/
 
-      # 2) Từ tmp -> TARGET_DIR/wp-content (có sudo), vẫn exclude uploads/cache để không xoá media
-      - name: Move to target with sudo & set permissions
+      - name: Fix permissions & reload PHP
         run: |
-          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<'EOF'
-          set -euo pipefail
-          TMP_DIR="$HOME/deploy_tmp/wp-content"
-          TARGET="${{ secrets.TARGET_DIR }}/wp-content"
-
-          sudo mkdir -p "$TARGET"
-
-          # rsync giữ sạch nhưng không đụng uploads/cache
-          sudo rsync -a --delete \
-            --exclude uploads --exclude cache \
-            "$TMP_DIR"/ "$TARGET"/
-
-          # Quyền chuẩn WP
-          sudo chown -R www-data:www-data "$TARGET"
-          sudo find "$TARGET" -type d -exec chmod 755 {} \;
-          sudo find "$TARGET" -type f -exec chmod 644 {} \;
-
-          # Reload dịch vụ (tùy phiên bản)
-          (sudo systemctl reload php8.2-fpm || sudo systemctl reload php8.1-fpm || true)
-          (sudo systemctl reload nginx || sudo systemctl reload apache2 || true)
-
-          echo "Deploy done: $(date -Is)"
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          sudo chown -R www-data:www-data /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes
+          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes -type d -exec chmod 755 {} \;
+          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes -type f -exec chmod 644 {} \;
+          sudo systemctl reload php8.1-fpm || true
           EOF
