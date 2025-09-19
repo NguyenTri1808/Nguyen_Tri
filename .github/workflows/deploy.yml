@@ -32,4 +32,4 @@ jobs:
             --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
             --rsync-path="sudo rsync" \
-            wp-content/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content
+            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
