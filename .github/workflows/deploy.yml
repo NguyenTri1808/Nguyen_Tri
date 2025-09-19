@@ -1,56 +1,44 @@
-name: Deploy theme to VPS
+- name: Setup SSH (agent + key with validation)
+  shell: bash
+  run: |
+    set -euo pipefail
+    eval "$(ssh-agent -s)"
+    mkdir -p ~/.ssh
 
-on:
-  push:
-    branches: [ "main" ]          # đổi nếu bạn dùng branch khác
-    paths:                          # chỉ chạy khi có thay đổi trong thư mục themes của repo
-      - "themes/**"
-  workflow_dispatch: {}
+    # ƯU TIÊN: lấy key từ SSH_KEY_B64 (private key đã base64)
+    if [ -n "${{ secrets.SSH_KEY_B64 }}" ]; then
+      echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci || true
+    fi
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    # FALLBACK: nếu chưa có file (hoặc rỗng), thử lấy từ SSH_PRIVATE_KEY (đa dòng hoặc 1 dòng có \n)
+    if [ ! -s ~/.ssh/id_ci ] && [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+      printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' | sed 's/\\r//g; s/\\n/\n/g' > ~/.ssh/id_ci
+    fi
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    # Nếu vẫn chưa có file -> fail sớm
+    if [ ! -s ~/.ssh/id_ci ]; then
+      echo "No private key material provided. Set SSH_KEY_B64 (preferred) or SSH_PRIVATE_KEY."
+      exit 1
+    fi
 
-      # Dùng secret SSH_KEY_B64 (private key đã base64) -> tránh lỗi xuống dòng / libcrypto
-      - name: Setup SSH agent
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval "$(ssh-agent -s)"
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci
-          chmod 600 ~/.ssh/id_ci
-          ssh-add ~/.ssh/id_ci
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+    chmod 600 ~/.ssh/id_ci || true
 
-      - name: Test SSH connectivity
-        run: |
-          ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'whoami && hostname'
+    echo "== HEADER =="; head -n1 ~/.ssh/id_ci || true
+    echo "== FOOTER =="; tail -n2 ~/.ssh/id_ci || true
 
-      # Chỉ đẩy thư mục themes của repo (gốc repo có thư mục themes/)
-      - name: Rsync only themes
-        run: |
-          rsync -az --delete \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            -e "ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
-            themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/"
+    echo "== FINGERPRINT (ssh-keygen -lf) =="
+    # Kiểm tra định dạng key. Nếu sai -> báo lỗi rõ ràng và dừng.
+    ssh-keygen -lf ~/.ssh/id_ci || { 
+      echo "Invalid private key file."
+      echo "- Đảm bảo bạn dùng PRIVATE key (không phải .pub)."
+      echo "- Dòng đầu phải là: -----BEGIN OPENSSH PRIVATE KEY-----"
+      echo "- Nếu dùng base64: phải base64 **file private key** nguyên vẹn, không thêm/kém ký tự."
+      exit 1
+    }
 
-      # Tuỳ chọn: sửa quyền & reload PHP-FPM (dùng biến TARGET_DIR cho gọn)
-      - name: Fix permissions & reload PHP (optional)
-        env:
-          TARGET_DIR: ${{ secrets.TARGET_DIR }}
-        run: |
-          ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
-          set -e
-          sudo chown -R www-data:www-data "$TARGET_DIR/wp-content/themes"
-          sudo find "$TARGET_DIR/wp-content/themes" -type d -exec chmod 755 {} \;
-          sudo find "$TARGET_DIR/wp-content/themes" -type f -exec chmod 644 {} \;
-          sudo systemctl reload php8.1-fpm || true
-          EOF
+    # Thêm key vào agent
+    ssh-add ~/.ssh/id_ci
+
+    # known_hosts để khỏi prompt yes/no
+    ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+    chmod 600 ~/.ssh/known_hosts
