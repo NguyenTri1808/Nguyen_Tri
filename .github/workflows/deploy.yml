@@ -2,9 +2,9 @@ name: Deploy theme to VPS
 
 on:
   push:
-    branches: [ "main" ]               # đổi nếu bạn dùng branch khác
+    branches: [ "main" ]
     paths:
-      - 'themes/**'                    # chỉ chạy khi có thay đổi trong themes
+      - 'themes/**'
   workflow_dispatch: {}
 
 jobs:
@@ -26,20 +26,25 @@ jobs:
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Rsync only themes (with sudo on remote)
+      - name: Verify SSH connectivity
         run: |
-         rsync -az --delete \
-          --omit-dir-times --no-perms --no-owner --no-group \
-          --exclude='.git' --exclude='.github' --exclude='node_modules' \
-          -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes" \
-          themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/"
+          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'echo "SSH OK"'
 
+      - name: Rsync only themes (use ssh-agent; no -i)
+        run: |
+          rsync -az --delete \
+            --omit-dir-times --no-perms --no-owner --no-group \
+            --exclude='.git' --exclude='.github' --exclude='node_modules' \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes" \
+            --rsync-path="sudo rsync" \
+            themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/"
 
       - name: Fix permissions & reload PHP
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          sudo chown -R www-data:www-data /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes -type d -exec chmod 755 {} \;
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes -type f -exec chmod 644 {} \;
-          sudo systemctl reload php8.1-fpm || true
-          EOF
+          ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "sudo chown -R www-data:www-data '${{ secrets.TARGET_DIR }}/wp-content/themes' && \
+             sudo find '${{ secrets.TARGET_DIR }}/wp-content/themes' -type d -exec chmod 755 {} \; && \
+             sudo find '${{ secrets.TARGET_DIR }}/wp-content/themes' -type f -exec chmod 644 {} \; && \
+             sudo systemctl reload php8.1-fpm || true"
