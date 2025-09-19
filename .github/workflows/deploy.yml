@@ -2,9 +2,9 @@ name: Deploy theme to VPS
 
 on:
   push:
-    branches: [ "main" ]           # đổi nếu bạn dùng branch khác
+    branches: [ "main" ]
     paths:
-      - "themes/**"                # chỉ chạy khi có thay đổi trong themes
+      - "themes/**"
   workflow_dispatch: {}
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      # Dùng secret SSH_PRIVATE_KEY dạng OpenSSH đa dòng
+      # Dùng PRIVATE KEY OpenSSH (đa dòng) từ secret
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
@@ -31,30 +31,42 @@ jobs:
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # 1) Upload themes to tmp (no sudo, robust)
+      # DEBUG: in fingerprint & public key để đối chiếu với server
+      - name: Show key fingerprint & public key (debug)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # tạo file từ secret để soi (không ảnh hưởng agent)
+          printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' | sed 's/\\r//g; s/\\n/\n/g' > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          echo "== HEADER =="; head -n1 ~/.ssh/id_ci
+          echo "== FINGERPRINT =="; ssh-keygen -lf ~/.ssh/id_ci
+          echo "== PUBLIC KEY =="; ssh-keygen -y -f ~/.ssh/id_ci
+
+      - name: Test SSH with our key (vvv)
+        shell: bash
+        run: |
+          ssh -vvv -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            'whoami && hostname'
+
+      # 1) Upload themes -> thư mục tạm của user (không sudo)
       - name: Upload themes to tmp (no sudo)
         shell: bash
         run: |
           set -euo pipefail
-
           echo "Host='${{ secrets.SSH_HOST }}' User='${{ secrets.SSH_USER }}' Port='${{ secrets.SSH_PORT }}'"
-
-          # Thư mục tạm trên máy remote (dùng $HOME tránh ~)
           REMOTE_TMP='$HOME/deploy_tmp/themes'
-
-          # Tạo thư mục tạm trên remote
           ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             "mkdir -p ${REMOTE_TMP}"
-
-          # Đồng bộ themes lên remote tmp
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
             --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
             themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${REMOTE_TMP}/"
 
-      # 2) Move to target with sudo & fix permissions
+      # 2) Từ tmp -> TARGET_DIR (sudo), set quyền & reload PHP
       - name: Move to target with sudo & fix permissions
         shell: bash
         env:
