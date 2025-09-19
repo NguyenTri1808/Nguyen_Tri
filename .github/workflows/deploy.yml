@@ -2,49 +2,65 @@ name: Deploy theme to VPS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]           # đổi nếu bạn dùng branch khác
     paths:
-      - "themes/**"
+      - 'themes/**'                # chỉ chạy khi có thay đổi trong themes
   workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Setup SSH (agent + key)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known_hosts
         run: |
-          set -euo pipefail
-          eval "$(ssh-agent -s)"
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci
-          chmod 600 ~/.ssh/id_ci
-          ssh-add ~/.ssh/id_ci
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Test SSH
+      # 1) Đẩy themes vào thư mục tạm trong HOME user (không cần sudo)
+      - name: Upload themes to tmp (no sudo)
         run: |
-          ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'whoami && hostname'
-
-      - name: Rsync only themes
-        run: |
+          TMP_DIR="~/deploy_tmp/themes"
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p $TMP_DIR"
           rsync -az --delete \
+            --omit-dir-times --no-perms --no-owner --no-group \
             --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            -e "ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
-            themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/"
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
+            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$TMP_DIR/
 
-      - name: Fix permissions & reload PHP (optional)
-        env:
-          TARGET_DIR: ${{ secrets.TARGET_DIR }}
+      # 2) Tại VPS: rsync từ tmp -> TARGET_DIR (có sudo), set quyền & reload PHP
+      - name: Move to target with sudo & fix permissions
         run: |
-          ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           set -e
-          sudo chown -R www-data:www-data "$TARGET_DIR/wp-content/themes"
-          sudo find "$TARGET_DIR/wp-content/themes" -type d -exec chmod 755 {} \;
-          sudo find "$TARGET_DIR/wp-content/themes" -type f -exec chmod 644 {} \;
-          sudo systemctl reload php8.1-fpm || true
+          TMP_DIR="$HOME/deploy_tmp/themes"
+          TARGET="${{ secrets.TARGET_DIR }}/wp-content/themes"
+
+          # Đảm bảo thư mục đích tồn tại
+          sudo mkdir -p "$TARGET"
+
+          # Rsync nội dung từ tmp sang target (giữ sạch, xóa file thừa)
+          sudo rsync -a --delete "$TMP_DIR"/ "$TARGET"/
+
+          # Quyền cho toàn bộ thư mục themes
+          sudo chown -R www-data:www-data "$TARGET"
+          sudo find "$TARGET" -type d -exec chmod 755 {} \;
+          sudo find "$TARGET" -type f -exec chmod 644 {} \;
+
+          # Reload PHP-FPM nếu có
+          sudo systemctl reload php8.1-fpm || sudo systemctl reload php8.2-fpm || true
+
+          # (Tùy) reload web server nếu cần
+          sudo systemctl reload nginx || sudo systemctl reload apache2 || true
           EOF
