@@ -2,9 +2,9 @@ name: Deploy theme to VPS
 
 on:
   push:
-    branches: [ "main" ]           # đổi nếu bạn dùng branch khác
-    paths:
-      - 'themes/**'                # chỉ chạy khi có thay đổi trong themes
+    branches: [ "main" ]          # đổi nếu bạn dùng branch khác
+    paths:                          # chỉ chạy khi có thay đổi trong thư mục themes của repo
+      - "themes/**"
   workflow_dispatch: {}
 
 jobs:
@@ -15,28 +15,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Dùng secret SSH_KEY_B64 (private key đã base64) -> tránh lỗi xuống dòng / libcrypto
       - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add known_hosts
+        shell: bash
         run: |
+          set -euo pipefail
+          eval "$(ssh-agent -s)"
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          ssh-add ~/.ssh/id_ci
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Test SSH connectivity
+        run: |
+          ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'whoami && hostname'
+
+      # Chỉ đẩy thư mục themes của repo (gốc repo có thư mục themes/)
       - name: Rsync only themes
         run: |
-          rsync -az --delete --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/
+          rsync -az --delete \
+            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+            -e "ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
+            themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/"
 
-      - name: Fix permissions & reload PHP
+      # Tuỳ chọn: sửa quyền & reload PHP-FPM (dùng biến TARGET_DIR cho gọn)
+      - name: Fix permissions & reload PHP (optional)
+        env:
+          TARGET_DIR: ${{ secrets.TARGET_DIR }}
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          sudo chown -R www-data:www-data /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes -type d -exec chmod 755 {} \;
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content/themes -type f -exec chmod 644 {} \;
+          ssh -i ~/.ssh/id_ci -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+          set -e
+          sudo chown -R www-data:www-data "$TARGET_DIR/wp-content/themes"
+          sudo find "$TARGET_DIR/wp-content/themes" -type d -exec chmod 755 {} \;
+          sudo find "$TARGET_DIR/wp-content/themes" -type f -exec chmod 644 {} \;
           sudo systemctl reload php8.1-fpm || true
           EOF
