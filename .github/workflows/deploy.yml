@@ -2,10 +2,10 @@ name: Deploy wp-content to VPS
 
 on:
   push:
-    branches: [ "main" ]           # sửa nếu bạn dùng branch khác
+    branches: [ "main" ]
     paths:
-      - 'wp-content/**'            # CHỈ chạy khi có thay đổi trong wp-content
-  workflow_dispatch: {}            # cho phép chạy tay
+      - 'wp-content/**'
+  workflow_dispatch: {}
 
 jobs:
   deploy:
@@ -15,51 +15,66 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # (Tuỳ chọn) build front-end cho theme nếu bạn có package.json
+      # Nếu có build asset cho theme thì bật khối này
       # - name: Build theme assets
       #   working-directory: wp-content/themes/vineye
       #   run: |
       #     npm ci
       #     npm run build
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}\
-          
-      - name: Derive public key from secret
+      # Cách chắc chắn: tự khởi động ssh-agent và nạp key đã chuẩn hoá
+      - name: Setup SSH (start agent & add key)
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(ssh-agent -s)"
+
+          # Trường hợp bạn lỡ lưu secret ở dạng 1 dòng có \n: chuyển \n -> newline.
+          # Nếu secret đã đúng dạng đa dòng thì câu lệnh này vẫn an toàn.
+          mkdir -p ~/.ssh
+          printf '%s' '${{ secrets.SSH_PRIVATE_KEY }}' | sed 's/\\r//g; s/\\n/\n/g' > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          ssh-add ~/.ssh/id_ci
+
+          # known_hosts
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Derive public key (debug)
         run: |
           set -e
-          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ci_key
-          chmod 600 /tmp/ci_key
-          ssh-keygen -y -f /tmp/ci_key > /tmp/ci_key.pub
-          echo "== BEGIN PUBKEY =="
-          cat /tmp/ci_key.pub
-          echo "== END PUBKEY =="
-      
+          ssh-keygen -y -f ~/.ssh/id_ci > /tmp/ci_key.pub
+          echo "== BEGIN PUBKEY ==" && cat /tmp/ci_key.pub && echo "== END PUBKEY =="
+
       - name: Test SSH connectivity
         run: |
-          ssh -vvv -o StrictHostKeyChecking=no -p "${{ secrets.SSH_PORT }}" \
+          ssh -vvv -o StrictHostKeyChecking=yes -p "${{ secrets.SSH_PORT }}" \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            'whoami && hostname' || true
+            'whoami && hostname'
 
       - name: Rsync wp-content (exclude uploads/cache)
         run: |
-          RSYNC_EXCLUDES="--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
+          RSYNC_EXCLUDES=(
+            "--exclude uploads"
+            "--exclude cache"
+            "--exclude .git"
+            "--exclude .github"
+            "--exclude node_modules"
+          )
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+            ${RSYNC_EXCLUDES[@]} \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
             --rsync-path="sudo rsync" \
-            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/
-
+            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
 
       - name: Fix permissions & reload services (optional)
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          sudo chown -R www-data:www-data /var/www/travelblog.id.vn/wonderland/wp-content
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content -type d -exec chmod 755 {} \;
-          sudo find /var/www/trisnguyen.id.vn/project_wp_nc/wp-content -type f -exec chmod 644 {} \;
-          # nếu theme dùng PHP template mới, reload PHP-FPM cho chắc:
+          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" << 'EOF'
+          set -e
+          sudo chown -R www-data:www-data ${TARGET_DIR}/wp-content
+          sudo find ${TARGET_DIR}/wp-content -type d -exec chmod 755 {} \;
+          sudo find ${TARGET_DIR}/wp-content -type f -exec chmod 644 {} \;
           sudo systemctl reload php8.1-fpm || true
           EOF
+        env:
+          TARGET_DIR: "${{ secrets.TARGET_DIR }}"
