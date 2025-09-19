@@ -1,48 +1,79 @@
-# 1) Upload themes to tmp (no sudo, robust)
-- name: Upload themes to tmp (no sudo)
-  shell: bash
-  run: |
-    set -euo pipefail
+name: Deploy theme to VPS
 
-    # Chẩn đoán: đảm bảo secrets có giá trị
-    echo "Host: '${{ secrets.SSH_HOST }}'  User: '${{ secrets.SSH_USER }}'  Port: '${{ secrets.SSH_PORT }}'"
+on:
+  push:
+    branches: [ "main" ]           # đổi nếu bạn dùng branch khác
+    paths:
+      - "themes/**"                # chỉ chạy khi có thay đổi trong themes
+  workflow_dispatch: {}
 
-    # Thư mục tạm ở máy remote (dùng $HOME tránh ~)
-    REMOTE_TMP='$HOME/deploy_tmp/themes'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-    # Tạo thư mục tạm trên remote
-    ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-      "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-      "mkdir -p ${REMOTE_TMP}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-    # Đồng bộ themes lên remote tmp
-    rsync -az --delete \
-      --omit-dir-times --no-perms --no-owner --no-group \
-      --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-      -e "ssh -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
-      themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${REMOTE_TMP}/"
+      # Dùng secret SSH_PRIVATE_KEY dạng OpenSSH đa dòng
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-# 2) Move to target with sudo & fix permissions
-- name: Move to target with sudo & fix permissions
-  shell: bash
-  run: |
-    set -euo pipefail
-    ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
-      "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<'EOF'
-    set -e
-    REMOTE_TMP="$HOME/deploy_tmp/themes"
-    TARGET_DIR="${TARGET_DIR}"
-    TARGET="$TARGET_DIR/wp-content/themes"
+      - name: Add known_hosts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-    sudo mkdir -p "$TARGET"
-    sudo rsync -a --delete "$REMOTE_TMP"/ "$TARGET"/
+      # 1) Upload themes to tmp (no sudo, robust)
+      - name: Upload themes to tmp (no sudo)
+        shell: bash
+        run: |
+          set -euo pipefail
 
-    sudo chown -R www-data:www-data "$TARGET"
-    sudo find "$TARGET" -type d -exec chmod 755 {} \;
-    sudo find "$TARGET" -type f -exec chmod 644 {} \;
+          echo "Host='${{ secrets.SSH_HOST }}' User='${{ secrets.SSH_USER }}' Port='${{ secrets.SSH_PORT }}'"
 
-    sudo systemctl reload php8.1-fpm || sudo systemctl reload php8.2-fpm || true
-    sudo systemctl reload nginx || sudo systemctl reload apache2 || true
-    EOF
-  env:
-    TARGET_DIR: ${{ secrets.TARGET_DIR }}
+          # Thư mục tạm trên máy remote (dùng $HOME tránh ~)
+          REMOTE_TMP='$HOME/deploy_tmp/themes'
+
+          # Tạo thư mục tạm trên remote
+          ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "mkdir -p ${REMOTE_TMP}"
+
+          # Đồng bộ themes lên remote tmp
+          rsync -az --delete \
+            --omit-dir-times --no-perms --no-owner --no-group \
+            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+            -e "ssh -o IdentitiesOnly=yes -p ${{ secrets.SSH_PORT }}" \
+            themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${REMOTE_TMP}/"
+
+      # 2) Move to target with sudo & fix permissions
+      - name: Move to target with sudo & fix permissions
+        shell: bash
+        env:
+          TARGET_DIR: ${{ secrets.TARGET_DIR }}
+        run: |
+          set -euo pipefail
+          ssh -o IdentitiesOnly=yes -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<'EOF'
+          set -e
+          REMOTE_TMP="$HOME/deploy_tmp/themes"
+          TARGET="${TARGET_DIR}/wp-content/themes"
+
+          sudo mkdir -p "$TARGET"
+          sudo rsync -a --delete "$REMOTE_TMP"/ "$TARGET"/
+
+          sudo chown -R www-data:www-data "$TARGET"
+          sudo find "$TARGET" -type d -exec chmod 755 {} \;
+          sudo find "$TARGET" -type f -exec chmod 644 {} \;
+
+          sudo systemctl reload php8.2-fpm || sudo systemctl reload php8.1-fpm || true
+          sudo systemctl reload nginx || sudo systemctl reload apache2 || true
+          EOF
