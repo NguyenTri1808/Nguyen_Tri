@@ -38,6 +38,21 @@ jobs:
           ssh -vvv -o StrictHostKeyChecking=no -p "${{ secrets.SSH_PORT }}" \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             'whoami && hostname'
+      - name: Derive public key from secret
+        run: |
+          set -e
+          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ci_key
+          chmod 600 /tmp/ci_key
+          ssh-keygen -y -f /tmp/ci_key > /tmp/ci_key.pub
+          echo "== BEGIN PUBKEY =="
+          cat /tmp/ci_key.pub
+          echo "== END PUBKEY =="
+      
+      - name: Test SSH connectivity
+        run: |
+          ssh -vvv -o StrictHostKeyChecking=no -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            'whoami && hostname' || true
 
       - name: Rsync wp-content (exclude uploads/cache)
         run: |
