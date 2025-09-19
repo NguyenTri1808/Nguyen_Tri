@@ -28,12 +28,12 @@ jobs:
 
       - name: Rsync only themes (with sudo on remote)
         run: |
-          rsync -az --delete \
-            --omit-dir-times --no-perms --no-owner --no-group \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            --rsync-path="sudo rsync" \
-            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/project_wp_nc
+         rsync -az --delete \
+          --omit-dir-times --no-perms --no-owner --no-group \
+          --exclude='.git' --exclude='.github' --exclude='node_modules' \
+          -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes" \
+          themes/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/project_wp_nc/"
+
 
       - name: Fix permissions & reload PHP
         run: |
