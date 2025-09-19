@@ -25,19 +25,8 @@ jobs:
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-      - name: Test SSH connectivity
-        run: |
-          set -x
-          ssh -vvv -o StrictHostKeyChecking=no -p "${{ secrets.SSH_PORT }}" \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            'whoami && hostname'
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}\
+          
       - name: Derive public key from secret
         run: |
           set -e
