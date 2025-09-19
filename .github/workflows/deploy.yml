@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'wp-content/**'          # chỉ chạy khi có thay đổi trong wp-content
+      - 'wp-content/**'
   workflow_dispatch: {}
 
 jobs:
@@ -12,15 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Nếu cần build assets cho theme, mở comment phần này
-      # - name: Build theme assets
-      #   working-directory: wp-content/themes/vineye
-      #   run: |
-      #     npm ci
-      #     npm run build
+      - uses: actions/checkout@v4
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -33,7 +25,16 @@ jobs:
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # (tuỳ chọn) Kiểm tra SSH
+      # Debug: in fingerprint & public key CI đang dùng
+      - name: Show key fingerprint (debug)
+        run: |
+          umask 177
+          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/ci_key
+          echo "Fingerprint:"
+          ssh-keygen -lf /tmp/ci_key || true
+          echo "Derived public key:"
+          ssh-keygen -y -f /tmp/ci_key
+
       - name: Verify SSH connectivity
         run: |
           ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
@@ -43,12 +44,12 @@ jobs:
         env:
           RSYNC_EXCLUDES: "--exclude 'uploads' --exclude 'cache' --exclude '.git' --exclude '.github' --exclude 'node_modules'"
         run: |
-           rsync -az --delete \
+          rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            -e "ssh -p ${{ secrets.SSH_PORT }}" \
+            $RSYNC_EXCLUDES \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes" \
             --rsync-path="sudo rsync" \
-            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/themes/
+            wp-content/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.TARGET_DIR }}/wp-content/"
 
       - name: Fix permissions & reload services
         run: |
