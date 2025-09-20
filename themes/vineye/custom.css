@@ -93,7 +93,7 @@ a { text-decoration:none; }
     display:flex; align-items:center; gap:12px;
   }
   .header-tools .header-search{ flex:1; }
-  .header-tools .header-search .search-wrap{ position:relative; }
+  /* .header-tools .header-search .search-wrap{ position:relative; max-width: 80%; justify-self: center; } */
   .header-tools .header-search .form-control{
     width:100%;
     border:0; border-bottom:1px solid #e5e7eb; border-radius:0;
@@ -109,7 +109,169 @@ a { text-decoration:none; }
     background:#fff; line-height:1; margin-left:8px;
   }
   .navbar .navbar-toggler{ margin-left:0; }
+  
 }
+
+/* ========== NAV MOBILE: CHỐNG XUNG ĐỘT ========== */
+
+/* 1) Đảm bảo collapse đóng/mở bình thường trên mobile, không ảnh hưởng desktop */
+@media (max-width: 991.98px) {
+  #mainNav.collapse:not(.show) { display: none; }
+  #mainNav.collapse.show       { display: block; }
+}
+
+/* 2) Nút toggler ở mobile nằm sát phải (đã có ms-auto nhưng thêm cho chắc) */
+.navbar-toggler[data-bs-target="#mainNav"] {
+  margin-left: auto;           /* đẩy sát phải trong flex container */
+  position: static;            /* tránh bị absolute gây lệch */
+  z-index: 1100;               /* trên menu/slider nếu cần */
+  line-height: 1;
+}
+
+/* 3) Style nút (tùy chọn, giữ tối thiểu để không xung đột) */
+.navbar-toggler[data-bs-target="#mainNav"] .toggler-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+}
+
+/* 4) Khi menu mở, ẩn icon bars, hiện icon close (JS đã xử lý, CSS này hỗ trợ) */
+.navbar-toggler[data-bs-target="#mainNav"] .toggler-icon.off.d-none { display: none !important; }
+
+/* 5) Dropdown của menu không bị che khi mở (an toàn) */
+#mainNav .dropdown-menu { z-index: 1091; }
+/* ===== Mobile Off-canvas ===== */
+:root{
+  --nav-width: 84vw;          /* giống ảnh: panel rộng ~80-85% */
+  --nav-bg: #fff;
+  --overlay: rgba(0,0,0,.45);
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --primary: #0ea5e9;         /* xanh dịu */
+}
+/* #mobile-search{ 
+  border-radius: 20px;
+  border: 1px solid black;
+  max-width: 80%;
+  margin-left: 3rem;
+ }  */
+/* Hamburger */
+.mobile-nav-toggle{
+  display:inline-flex; flex-direction:column; justify-content:center; gap:4px;
+  width:44px; height:44px; border:0; background:transparent; padding:8px; cursor:pointer;
+}
+.mobile-nav-toggle .bar{ width:22px; height:2px; background:#0b0b0b; display:block; }
+
+/* Overlay */
+.nav-overlay{
+  position:fixed; inset:0; background:var(--overlay);
+  opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:998;
+}
+
+/* Panel */
+.mobile-nav{
+  position:fixed; top:0; right:0; height:100dvh; width:var(--nav-width); max-width:420px;
+  background:var(--nav-bg); transform:translateX(100%); transition:transform .28s ease;
+  z-index:999; display:flex; flex-direction:column; box-shadow:-12px 0 24px rgba(0,0,0,.12);
+  -webkit-overflow-scrolling:touch;
+}
+.mobile-nav__head{ display:flex; justify-content:flex-end; padding:10px 12px; border-bottom:1px solid var(--border); }
+.mobile-nav__close{ font-size:34px; width:44px; height:44px; border:0; background:transparent; cursor:pointer; }
+
+.mobile-nav__search{ padding:12px; border-bottom:1px solid var(--border); }
+.mobile-nav__search .search-wrap{ position:relative; }
+.mobile-nav__search input{ width:100%; padding:10px 44px 10px 12px; border:1px solid var(--border); border-radius:10px; }
+.mobile-nav__search .btn-search{ position:absolute; right:8px; top:50%; transform:translateY(-50%); border:0; background:transparent; }
+
+.mobile-nav__menu{ flex:1 1 auto; overflow:auto; padding:6px 0; }
+.mobile-menu{ list-style:none; margin:0; padding:0; }
+.mobile-menu > li{ border-bottom:1px solid var(--border); display: flex; }
+.mobile-menu > li > a{
+  display:flex; align-items:center; gap:10px; padding:14px 16px; text-decoration:none;
+  color:#222; font-weight:700; text-transform:uppercase;
+}
+
+/* Submenu toggle (mũi tên ▸) */
+.mobile-menu .submenu-toggle{
+   width:40px; height:40px; border:0; background:transparent; cursor:pointer;
+  font-size:2rem; color:var(--muted);
+}
+.mobile-menu .submenu-toggle:before{ content:"▸"; display:inline-block; transition:transform .2s ease; }
+.mobile-menu .submenu-toggle[aria-expanded="true"]:before{ transform:rotate(90deg); }
+
+.mobile-menu .sub-menu{ list-style:none; margin:0; padding:0; display:none; background:#fafafa; }
+.mobile-menu .sub-menu li{ border-bottom:1px dashed #eee; }
+.mobile-menu .sub-menu a{ display:block; padding:12px 16px 12px 28px; color:#333; text-decoration:none; font-weight:600; text-transform:none; }
+
+.mobile-nav__footer{ padding:12px; border-top:1px solid var(--border); }
+.btn-hotline{ display:block; text-align:center; padding:12px 14px; border-radius:10px; border:1px solid var(--primary); text-decoration:none; }
+
+/* Open state */
+body.nav-open{ overflow:hidden; touch-action:none; }
+body.nav-open .mobile-nav{ transform:translateX(0); }
+body.nav-open .nav-overlay{ opacity:1; pointer-events:auto; }
+
+/* Ẩn khối mobile trên desktop (tuỳ breakpoint) */
+@media (min-width: 992px){
+  .mobile-nav-toggle{ display:none; }
+  #navOverlay, #mobileNav{ display:none; }
+}
+/* ======= FIX HEADER MOBILE không đè logo ======= */
+@media (max-width: 991.98px) {
+  /* Nav KHÔNG fixed ở mobile, dù JS có gắn .is-fixed */
+  #site-nav,
+  #site-nav.is-fixed {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #eef0f3; /* đường kẻ mảnh giống desktop */
+  }
+
+  /* Bỏ padding-top do JS thêm khi nav fixed */
+  body { padding-top: 0 !important; }
+
+  /* Bỏ chiều cao cứng của nav để logo/row tự co giãn */
+  #site-nav { height: auto !important; }
+
+  /* Giới hạn logo ở mobile để không vượt quá header */
+  .site-header .custom-logo { max-height: 48px; width: auto; }
+
+  /* Topbar luôn nằm trên nội dung, không bị nav che */
+  .topbar { position: relative; z-index: 1089; }
+
+  /* Nút hamburger & search không bị lệch */
+  .header-tools { align-items: center; gap: 12px; }
+  .header-tools .header-search .form-control {
+    border: 0; border-bottom: 1px solid #e5e7eb; border-radius: 0;
+    padding: 10px 40px 10px 0;
+  }
+  .navbar-toggler[data-bs-target="#mainNav"] {
+    margin-left: auto;
+    position: static;
+    z-index: 1090;
+  }
+
+  /* Off-canvas mobile menu ưu tiên cao hơn header */
+  .nav-overlay { z-index: 1198 !important; }
+  .mobile-nav  { z-index: 1199 !important; }
+}
+
+/* ======= DESKTOP giữ nguyên hành vi fixed như cũ ======= */
+@media (min-width: 992px) {
+  #site-nav { height: 4rem; }                 /* bạn đang dùng */
+  #site-nav.is-fixed {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .admin-bar #site-nav.is-fixed { top: 32px; }
+}
+
+/*======================== END MOBILE ======================= */
 /* ======================= END HEADER ======================= */
 
 
@@ -168,6 +330,16 @@ a { text-decoration:none; }
   .bv-features-swiper .swiper-button-next,
   .bv-features-swiper .swiper-button-prev{ display:none; } /* mobile dùng dots */
 }
+
+.feature-icon{
+  width:60px; height:60px;
+  display:grid; place-items:center;
+  overflow:hidden;
+  color:rgb(133, 201, 238);             /* SVG sẽ nhận màu này nếu fill="currentColor" */
+}
+.feature-icon .svg-icon{ width:100% !important; height:100% !important; display:block; }
+.feature-icon .fi-img{ width:100%; height:100%; object-fit:contain; display:block; }
+
 
 
 /* Logo Bao Chi */
@@ -389,14 +561,8 @@ a { text-decoration:none; }
 }
 
 
-/* Video Section */
-.video-item{
-  justify-self:center;
-  margin-top:50px;
-  margin-bottom:50px;
-}
-
-/* Hộp giữ tỉ lệ 16:9 để iframe không vỡ khung */
+/* ===========================Video Section */
+/* Box giữ tỷ lệ 16:9 để iframe không méo */
 .video-responsive{
   width:100%;
   aspect-ratio:16/9;
@@ -405,12 +571,13 @@ a { text-decoration:none; }
   overflow:hidden;
 }
 
-/* Ép nội dung oEmbed/iframe full box */
+/* Ép các wrapper/oEmbed của WP full box */
 .video-responsive iframe,
 .video-responsive embed,
 .video-responsive object,
 .video-responsive video,
 .video-responsive .wp-block-embed__wrapper,
+.video-responsive > div,
 .video-responsive > *{
   width:100% !important;
   height:100% !important;
@@ -418,34 +585,35 @@ a { text-decoration:none; }
   border:0;
 }
 
-/* Fallback cho trình duyệt không hỗ trợ aspect-ratio */
+/* Fallback nếu trình duyệt không hỗ trợ aspect-ratio */
 @supports not (aspect-ratio: 16/9){
   .video-responsive{ position:relative; padding-top:56.25%; }
-  .video-responsive iframe,
-  .video-responsive embed,
-  .video-responsive object,
-  .video-responsive video,
-  .video-responsive .wp-block-embed__wrapper{
-    position:absolute; inset:0;
-  }
+  .video-responsive > *{ position:absolute; inset:0; }
 }
 
-/* Container rộng hơn CHỈ cho khu vực video */
-@media (min-width:1200px){
-  .video-wide{ max-width:1320px; }   /* > container mặc định 1140px */
-}
-@media (min-width:1400px){
-  .video-wide{ max-width:1560px; }   /* lớn hơn cả container-xxl 1320px */
-}
+/* Featured to hơn + bo góc lớn */
+.video-featured .video-responsive{ border-radius:16px; }
 
-/* Thu nhỏ khoảng cách trên màn nhỏ */
-@media (max-width:576px){
-  .video-item{ margin:16px 0; }
-}
+/* Cột phải gọn gàng, có hover nhẹ */
+.stacked-videos .video-item{ margin:0; transition:transform .15s ease, box-shadow .15s ease; }
+.stacked-videos .video-item:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.12); }
+
+/* Tạo khoảng cách với tiêu đề */
+.vineye-videos .title-doctors{ margin-bottom:16px; }
+@media (min-width:992px){ .vineye-videos .title-doctors{ margin-bottom:24px; } }
+
+/* Container rộng hơn cho khu vực video (tuỳ theme) */
+@media (min-width:1200px){ .video-wide{ max-width:1320px; } }
+@media (min-width:1400px){ .video-wide{ max-width:1560px; } }
+
+/* (Tuỳ chọn) Sidebar phải sticky khi cuộn */
+@media (min-width:992px){ .stacked-videos{ position:sticky; top:24px; } }
 
 
 
-/* kết quả bệnh nhân tại vineye */
+
+
+/* ===================================================kết quả bệnh nhân tại vineye */
 .ketqua-grid{
   display:grid;
   grid-template-columns: 1.4fr 1fr; /* trái to hơn phải */

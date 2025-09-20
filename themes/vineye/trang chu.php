@@ -10,8 +10,38 @@ get_header();
 <div class="container">
     <div class="row">
         <?php
+        // ====== THÊM: Hàm chuẩn hoá SVG ======
+        if (!function_exists('normalize_svg')) {
+        function normalize_svg($svg){
+            if (strpos($svg, '<svg') === false) return $svg;
+
+            // Bỏ width/height inline để có thể scale bằng CSS
+            $svg = preg_replace('/\s(width|height)\s*=\s*"[^"]*"/i', '', $svg);
+
+            // Thêm class="svg-icon" (nếu chưa có)
+            if (!preg_match('/<svg[^>]*class=/i', $svg)) {
+            $svg = preg_replace('/<svg/i', '<svg class="svg-icon"', $svg, 1);
+            } else {
+            $svg = preg_replace('/(<svg[^>]*class=")([^"]*)"/i', '$1$2 svg-icon"', $svg, 1);
+            }
+
+            // Thêm preserveAspectRatio nếu thiếu
+            if (!preg_match('/preserveAspectRatio=/i', $svg)) {
+            $svg = preg_replace('/<svg/i', '<svg preserveAspectRatio="xMidYMid meet"', $svg, 1);
+            }
+
+            // (Tuỳ chọn) Cho phép đổi màu bằng currentColor nếu SVG không set ở <path>
+            if (!preg_match('/<svg[^>]*\sfill=/i', $svg)) {
+            $svg = preg_replace('/<svg/i', '<svg fill="currentColor"', $svg, 1);
+            }
+
+            return $svg;
+        }
+        }
+
+        // ====== PHẦN CODE CỦA BẠN – ĐÃ SỬA CHỖ TẠO $icon_html ======
         $content1 = get_field('content1');
-        $blocks = [];
+        $blocks   = [];
         foreach (['bn1','bn2','bn3'] as $k) {
         if (!empty($content1[$k])) $blocks[] = $content1[$k];
         }
@@ -19,71 +49,74 @@ get_header();
         if ($blocks):
         ?>
         <!-- Swiper CSS -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
 
         <div id="swiper-container" class="container my-5">
-        <div class="swiper bv-features-swiper">
-            <div class="swiper-wrapper">
-            <?php foreach ($blocks as $b):
+            <div class="swiper bv-features-swiper">
+                <div class="swiper-wrapper">
+                    <?php foreach ($blocks as $b):
                 $title = $b['title'] ?? '';
                 $desc  = $b['desc']  ?? '';
                 $icon  = $b['icon']  ?? '';
 
-                // Chuẩn bị icon: hỗ trợ SVG string hoặc URL ảnh / ACF image array
+                // === CHỖ NÀY ĐÃ SỬA: CHUẨN HOÁ SVG TRƯỚC KHI ECHO ===
                 $icon_html = '';
                 if (is_array($icon)) {
+                // ACF image array
                 $src = $icon['url'] ?? '';
                 if ($src) $icon_html = '<img src="'.esc_url($src).'" alt="" class="fi-img">';
                 } else {
                 if (filter_var($icon, FILTER_VALIDATE_URL)) {
+                    // URL ảnh / SVG file
                     $icon_html = '<img src="'.esc_url($icon).'" alt="" class="fi-img">';
                 } else {
-                    $icon_html = (string)$icon; // SVG thô
+                    // SVG thô -> chuẩn hoá
+                    $icon_html = normalize_svg((string)$icon);
                 }
                 }
             ?>
-            <div class="swiper-slide">
-                <div class="card feature-card h-100 shadow-sm border-0">
-                <div class="card-body p-4 text-center d-flex flex-column">
-                    <?php if ($icon_html): ?>
-                    <div class="feature-icon mx-auto mb-3">
-                        <?php
-                        echo wp_kses($icon_html, [
-                        'svg' => [
-                            'class'=>true,'xmlns'=>true,'viewBox'=>true,'width'=>true,'height'=>true,
-                            'fill'=>true,'aria-hidden'=>true,'role'=>true,'preserveAspectRatio'=>true
+                    <div class="swiper-slide">
+                        <div class="card feature-card h-100 shadow-sm border-0">
+                            <div class="card-body p-4 text-center d-flex flex-column">
+                                <?php if ($icon_html): ?>
+                                <div class="feature-icon mx-auto mb-3">
+                                    <?php
+                    echo wp_kses($icon_html, [
+                        'svg'  => [
+                        'class'=>true,'xmlns'=>true,'viewBox'=>true,'preserveAspectRatio'=>true,
+                        'fill'=>true,'role'=>true,'aria-hidden'=>true
                         ],
                         'path' => [
-                            'd'=>true,'fill'=>true,'fill-rule'=>true,'clip-rule'=>true,
-                            'stroke'=>true,'stroke-width'=>true,'stroke-linecap'=>true,'stroke-linejoin'=>true
+                        'd'=>true,'fill'=>true,'fill-rule'=>true,'clip-rule'=>true,
+                        'stroke'=>true,'stroke-width'=>true,'stroke-linecap'=>true,'stroke-linejoin'=>true
                         ],
-                        'g' => ['fill'=>true,'stroke'=>true,'stroke-width'=>true,'clip-path'=>true],
-                        'img' => ['src'=>true,'alt'=>true,'width'=>true,'height'=>true,'loading'=>true,'decoding'=>true,'class'=>true]
-                        ]);
-                        ?>
+                        'g'    => ['fill'=>true,'stroke'=>true,'stroke-width'=>true,'clip-path'=>true],
+                        'img'  => ['src'=>true,'alt'=>true,'width'=>true,'height'=>true,'loading'=>true,'decoding'=>true,'class'=>true]
+                    ]);
+                    ?>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if ($title): ?>
+                                <h3 class="h5 fw-bold text-primary mb-3"><?php echo esc_html($title); ?></h3>
+                                <?php endif; ?>
+
+                                <?php if ($desc): ?>
+                                <div class="text-secondary lh-lg flex-grow-1">
+                                    <?php echo wpautop(wp_kses_post($desc)); ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
-                    <?php endif; ?>
-
-                    <?php if ($title): ?>
-                    <h3 class="h5 fw-bold text-primary mb-3"><?php echo esc_html($title); ?></h3>
-                    <?php endif; ?>
-
-                    <?php if ($desc): ?>
-                    <div class="text-secondary lh-lg flex-grow-1">
-                        <?php echo wpautop(wp_kses_post($desc)); ?>
-                    </div>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
-                </div>
-            </div>
-            <?php endforeach; ?>
-            </div>
 
-            <!-- Nút điểm điều hướng -->
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
-            <div class="swiper-pagination d-lg-none"></div>
-        </div>
+                <!-- Nút điều hướng -->
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-pagination d-lg-none"></div>
+            </div>
         </div>
 
         <!-- Swiper JS -->
@@ -95,29 +128,36 @@ get_header();
             grabCursor: true,
             loop: false,
             navigation: {
-            nextEl: '.bv-features-swiper .swiper-button-next',
-            prevEl: '.bv-features-swiper .swiper-button-prev',
+                nextEl: '.bv-features-swiper .swiper-button-next',
+                prevEl: '.bv-features-swiper .swiper-button-prev',
             },
             pagination: {
-            el: '.bv-features-swiper .swiper-pagination',
-            clickable: true,
+                el: '.bv-features-swiper .swiper-pagination',
+                clickable: true,
             },
             breakpoints: {
-            768: { slidesPerView: 2, spaceBetween: 24 },
-            992: { slidesPerView: 3, spaceBetween: 28 }
+                768: {
+                    slidesPerView: 2,
+                    spaceBetween: 24
+                },
+                992: {
+                    slidesPerView: 3,
+                    spaceBetween: 28
+                }
             }
         });
         </script>
         <?php endif; ?>
 
 
+
         <!-- Báo Chí Nói Gì Về Chúng Tôi -->
         <section class="partner-logos">
             <div class="title-baochi">
-                <h2 id="h2-baochi-home">Báo Chí  </h2>
+                <h2 id="h2-baochi-home">Báo Chí </h2>
                 <h2 id="h2-baochi-home2"> Nói Gì Về Chúng Tôi</h2>
             </div>
-            
+
             <div class="logo-container row">
                 <?php
                 $baochi = get_field('baochi');
@@ -152,7 +192,7 @@ get_header();
             </div>
         </section>
 
-       <!-- BÁC SĨ & CHUYÊN GIA MẮT -->
+        <!-- BÁC SĨ & CHUYÊN GIA MẮT -->
         <section class="doctors-section py-5">
             <div class="container">
                 <div class="title-doctors text-center mb-4">
@@ -173,20 +213,20 @@ get_header();
                             
                             if( $image || $desc ):
                     ?>
-                        <div class="col-md-4 mb-4">
-                            <div class="card staff-card">
-                                <div class="image-wrapper">
-                                    <?php if( $image ): ?>
-                                        <img src="<?php echo esc_url($image); ?>" alt="" class="img-fluid staff-img">
-                                    <?php endif; ?>
-                                    <?php if( $desc ): ?>
-                                        <div class="overlay">
-                                            <p><?php echo nl2br(esc_html($desc)); ?></p>
-                                        </div>
-                                    <?php endif; ?>
+                    <div class="col-md-4 mb-4">
+                        <div class="card staff-card">
+                            <div class="image-wrapper">
+                                <?php if( $image ): ?>
+                                <img src="<?php echo esc_url($image); ?>" alt="" class="img-fluid staff-img">
+                                <?php endif; ?>
+                                <?php if( $desc ): ?>
+                                <div class="overlay">
+                                    <p><?php echo nl2br(esc_html($desc)); ?></p>
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </div>
+                    </div>
                     <?php 
                             endif;
                         endforeach; 
@@ -196,7 +236,7 @@ get_header();
             </div>
         </section>
 
-    <!-- DỊCH VỤ UY TÍN TẠI VIN EYE -->
+        <!-- DỊCH VỤ UY TÍN TẠI VIN EYE -->
         <section>
             <div class="title-doctors">
                 <h2 id="h2-bacsi-home">DỊCH VỤ UY TÍN </h2>
@@ -218,23 +258,21 @@ get_header();
 
                         if ( $name || $image ) :
                 ?>
-                    <div class="col-md-3 col-6 mb-4">
-                        <div class="dichvu-box text-center">
-                            <?php if ($image): ?>
-                                <div class="dichvu-img">
-                                    <img src="<?php echo esc_url($image); ?>" 
-                                        alt="" 
-                                        class="img-fluid">
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if ($name): ?>
-                                <div class="dichvu-name">
-                                    <h5><?php echo esc_html($name); ?></h5>
-                                </div>
-                            <?php endif; ?>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="dichvu-box text-center">
+                        <?php if ($image): ?>
+                        <div class="dichvu-img">
+                            <img src="<?php echo esc_url($image); ?>" alt="" class="img-fluid">
                         </div>
+                        <?php endif; ?>
+
+                        <?php if ($name): ?>
+                        <div class="dichvu-name">
+                            <h5><?php echo esc_html($name); ?></h5>
+                        </div>
+                        <?php endif; ?>
                     </div>
+                </div>
                 <?php 
                         endif;
                     endforeach;
@@ -270,15 +308,13 @@ get_header();
 
                     if ($image) :
             ?>
-                <div class="col-md-3 col-6">
-                    <div class="facility-item">
-                        <img src="<?php echo esc_url($image); ?>" 
-                             alt="Cơ sở vật chất" 
-                             class="img-fluid rounded shadow"
-                             id="img-vatchat-home">
-                             
-                    </div>
+            <div class="col-md-3 col-6">
+                <div class="facility-item">
+                    <img src="<?php echo esc_url($image); ?>" alt="Cơ sở vật chất" class="img-fluid rounded shadow"
+                        id="img-vatchat-home">
+
                 </div>
+            </div>
             <?php 
                     endif;
                 endforeach;
@@ -288,53 +324,81 @@ get_header();
     </div>
 </section>
 <!-- Video tại vineye -->
-    <div class="container">
-        <div class="row">
-            <section>
-                <div class="title-doctors">
-                    <h2 id="h2-bacsi-home3">VIDEO </h2>
-                    <h2 id="h2-bacsi-home"> TẠI VIN EYE</h2>
+<div class="container">
+    <div class="row">
+        <section class="vineye-videos">
+            <div class="title-doctors">
+                <h2 id="h2-bacsi-home3">VIDEO </h2>
+                <h2 id="h2-bacsi-home"> TẠI VIN EYE</h2>
+            </div>
+
+            <?php
+            // Lấy group ACF tên 'videos' có các key video1..video4
+            $group = get_field('video');
+            $keys  = ['video1','video2','video3','video4'];
+
+            // Chuẩn hóa về mảng các HTML oEmbed/iframe hợp lệ
+            $items = [];
+            if ($group && is_array($group)) {
+                foreach ($keys as $k) {
+                if (empty($group[$k])) continue;
+
+                $raw  = $group[$k];
+                $html = '';
+
+                if (is_array($raw)) {                           // nếu bạn bọc thêm group con
+                    $url = $raw['url'] ?? $raw['link'] ?? '';
+                    if ($url) $html = wp_oembed_get($url);
+                } else {                                        // chuỗi URL hoặc iframe
+                    if (filter_var($raw, FILTER_VALIDATE_URL)) {
+                    $html = wp_oembed_get($raw);
+                    } else {
+                    $html = $raw;                               // iframe đã nhúng sẵn
+                    }
+                }
+
+                if ($html) $items[] = $html;
+                }
+            }
+
+            if (!empty($items)) :
+                // Video đầu là featured (bên trái)
+                $featured = array_shift($items);
+            ?>
+            <div class="container video-wide">
+                <div class="row g-4 g-xl-5 align-items-start mt-3">
+                    <!-- Trái: video lớn -->
+                    <div class="col-12 col-lg-8">
+                        <div class="video-item video-featured">
+                            <div class="video-responsive">
+                                <?php echo $featured; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phải: 3 video nhỏ xếp dọc -->
+                    <div class="col-12 col-lg-4">
+                        <div class="stacked-videos d-grid gap-4">
+                            <?php foreach ($items as $html): ?>
+                            <div class="video-item video-sm">
+                                <div class="video-responsive">
+                                    <?php echo $html; ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
-                <?php 
-                    $group = get_field('video');
-
-                    if ($group && is_array($group)) {
-                    echo '<div class="container video-wide">';                  // container riêng, rộng hơn
-                    echo '  <div class="row g-4 g-xl-5">';                      // tăng khoảng cách cột/hàng
-
-                    foreach ($group as $raw) {
-                        if (empty($raw)) continue;
-
-                        $embed_html = '';
-
-                        if (is_array($raw)) {
-                        $url = $raw['url'] ?? $raw['link'] ?? '';
-                        if ($url) $embed_html = wp_oembed_get($url);
-                        } else {
-                        $embed_html = filter_var($raw, FILTER_VALIDATE_URL) ? wp_oembed_get($raw) : $raw; // iframe html
-                        }
-
-                        if ($embed_html) {
-                        echo '<div class="col-12 col-md-6">';                   // 1 cột mobile, 2 cột từ md
-                        echo '  <div class="video-item">';
-                        echo '    <div class="video-responsive">';              // hộp giữ tỉ lệ 16:9
-                        echo          $embed_html;
-                        echo '    </div>';
-                        echo '  </div>';
-                        echo '</div>';
-                        }
-                    }
-
-                    echo '  </div>'; // .row
-                    echo '</div>';   // .container.video-wide
-                    }
-                ?>  
-
+            </div>
+            <?php endif; ?>
         </section>
+
+
+
         <!-- Kết quả của khách hàng -->
         <section>
             <div class="title-doctors">
-                <h2 id="h2-bacsi-home3">KẾT QUẢ  </h2>
+                <h2 id="h2-bacsi-home3">KẾT QUẢ </h2>
                 <h2 id="h2-bacsi-home"> CỦA KHÁCH HÀNG</h2>
             </div>
             <div class="text-doctors">
@@ -398,20 +462,20 @@ get_header();
             $big  = array_shift($imgs);
             ?>
             <section class="ketqua-gallery">
-            <div class="ketqua-grid">
-                <div class="ketqua-left">
-                <?php echo ve_img_tag($big, 'x-large', 'ketqua-big'); ?>
-                </div>
+                <div class="ketqua-grid">
+                    <div class="ketqua-left">
+                        <?php echo ve_img_tag($big, 'x-large', 'ketqua-big'); ?>
+                    </div>
 
-                <div class="ketqua-right">
-                <?php
+                    <div class="ketqua-right">
+                        <?php
                 // Các ảnh còn lại thành lưới 3 cột
                 foreach ($imgs as $img) {
                     echo '<div class="ketqua-thumb">'. ve_img_tag($img, 'medium_large', 'ketqua-thumb-img') .'</div>';
                 }
                 ?>
+                    </div>
                 </div>
-            </div>
             </section>
         </section>
         <!-- CHƯƠNG TRÌNH KHUYẾN MẠI  -->
@@ -447,10 +511,10 @@ get_header();
                 ]);
 
                 if ($q->have_posts()) : ?>
-                <div id="box-khuyenmai" class="row g-4">
-                    <?php while ($q->have_posts()) : $q->the_post(); ?>
-                    <div class="col-12 col-md-4">
-                        <article <?php post_class('card h-100'); ?>>
+            <div id="box-khuyenmai" class="row g-4">
+                <?php while ($q->have_posts()) : $q->the_post(); ?>
+                <div class="col-12 col-md-4">
+                    <article <?php post_class('card h-100'); ?>>
 
                         <?php
                         // 1) Ảnh đại diện (featured) nếu có
@@ -470,39 +534,39 @@ get_header();
                         }
 
                         if ($thumb_html) : ?>
-                            <a href="<?php the_permalink(); ?>" class="ratio ratio-16x9 d-block overflow-hidden">
+                        <a href="<?php the_permalink(); ?>" class="ratio ratio-16x9 d-block overflow-hidden">
                             <?php echo $thumb_html; ?>
-                            </a>
+                        </a>
                         <?php endif; ?>
 
                         <div class="card-body">
                             <h5 class="card-title mb-2">
-                            <a href="<?php the_permalink(); ?>" class="stretched-link text-decoration-none">
-                                <?php the_title(); ?>
-                            </a>
+                                <a href="<?php the_permalink(); ?>" class="stretched-link text-decoration-none">
+                                    <?php the_title(); ?>
+                                </a>
                             </h5>
                             <p class="card-text small text-muted mb-2">
-                            <time datetime="<?php echo esc_attr(get_the_date('c')); ?>">
-                                <?php echo esc_html(get_the_date()); ?>
-                            </time>
+                                <time datetime="<?php echo esc_attr(get_the_date('c')); ?>">
+                                    <?php echo esc_html(get_the_date()); ?>
+                                </time>
                             </p>
                             <p class="card-text">
-                            <?php echo esc_html(wp_trim_words(get_the_excerpt(), 25)); ?>
+                                <?php echo esc_html(wp_trim_words(get_the_excerpt(), 25)); ?>
                             </p>
                         </div>
-                        </article>
-                    </div>
-                    <?php endwhile; ?>
+                    </article>
                 </div>
-                <?php wp_reset_postdata(); ?>
-                <?php else : ?>
-                <p>Chưa có bài viết.</p>
-                <?php endif; ?>
+                <?php endwhile; ?>
+            </div>
+            <?php wp_reset_postdata(); ?>
+            <?php else : ?>
+            <p>Chưa có bài viết.</p>
+            <?php endif; ?>
 
 
         </section>
     </div>
- </div>
+</div>
 
 <?php
 get_footer();
