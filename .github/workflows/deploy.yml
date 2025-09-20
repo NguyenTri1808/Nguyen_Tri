@@ -2,9 +2,9 @@ name: Deploy theme to VPS
 
 on:
   push:
-    branches: [ "main" ]           # đổi nếu bạn dùng branch khác
+    branches: [ "main" ]            # đổi nếu dùng branch khác
     paths:
-      - 'themes/**'                # chỉ chạy khi có thay đổi trong themes
+      - 'themes/**'                 # chỉ chạy khi có thay đổi trong themes
   workflow_dispatch: {}
 
 jobs:
@@ -28,39 +28,50 @@ jobs:
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # 1) Đẩy themes vào thư mục tạm trong HOME user (không cần sudo)
-      - name: Upload themes to tmp (no sudo)
+      # 1) Upload đúng theme vineye vào thư mục tạm TRÊN SERVER (expand ở server)
+      - name: Upload theme vineye to tmp (no sudo)
         run: |
-          TMP_DIR="~/deploy_tmp/themes"
+          # quan trọng: để server tự expand $HOME, KHÔNG expand ở runner
+          TMP_DIR='$HOME/deploy_tmp/themes/vineye'
+
+          # tạo thư mục tạm trên server
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p $TMP_DIR"
+
+          # rsync duy nhất theme vineye
           rsync -az --delete \
             --omit-dir-times --no-perms --no-owner --no-group \
             --exclude '.git' --exclude '.github' --exclude 'node_modules' \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            themes/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$TMP_DIR/
+            themes/vineye/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:"$TMP_DIR/"
 
-      # 2) Tại VPS: rsync từ tmp -> TARGET_DIR (có sudo), set quyền & reload PHP
+      # 2) VPS: rsync từ tmp -> TARGET_DIR (sudo), set quyền & reload PHP
       - name: Move to target with sudo & fix permissions
         run: |
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           set -e
-          TMP_DIR="$HOME/deploy_tmp/themes"
-          TARGET="${{ secrets.TARGET_DIR }}/wp-content/themes"
+          TMP_DIR="$HOME/deploy_tmp/themes/vineye"
+          TARGET="${{ secrets.TARGET_DIR }}/wp-content/themes/vineye"
 
           # Đảm bảo thư mục đích tồn tại
           sudo mkdir -p "$TARGET"
 
-          # Rsync nội dung từ tmp sang target (giữ sạch, xóa file thừa)
+          # Đồng bộ sạch theme vineye
           sudo rsync -a --delete "$TMP_DIR"/ "$TARGET"/
 
-          # Quyền cho toàn bộ thư mục themes
-          sudo chown -R www-data:www-data "$TARGET"
-          sudo find "$TARGET" -type d -exec chmod 755 {} \;
-          sudo find "$TARGET" -type f -exec chmod 644 {} \;
+          # Quyền cho theme vineye
+          sudo chown -R www-data:www-data "$TARGET" || true
+          sudo find "$TARGET" -type d -exec chmod 755 {} \; || true
+          sudo find "$TARGET" -type f -exec chmod 644 {} \; || true
 
-          # Reload PHP-FPM nếu có
-          sudo systemctl reload php8.1-fpm || sudo systemctl reload php8.2-fpm || true
+          # Reload PHP-FPM (tùy phiên bản)
+          sudo systemctl reload php8.2-fpm || sudo systemctl reload php8.1-fpm || true
 
-          # (Tùy) reload web server nếu cần
+          # Reload web server nếu cần
           sudo systemctl reload nginx || sudo systemctl reload apache2 || true
           EOF
+
+      # (khuyến nghị) xóa cache nếu có
+      - name: Clear caches (optional)
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            'wp cache flush || true; wp redis flush || true'
