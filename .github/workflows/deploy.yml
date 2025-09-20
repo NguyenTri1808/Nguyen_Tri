@@ -30,19 +30,18 @@ jobs:
 
       # 1) Upload đúng theme vineye vào thư mục tạm TRÊN SERVER (expand ở server)
       - name: Upload theme vineye to tmp (no sudo)
-        run: |
-          # quan trọng: để server tự expand $HOME, KHÔNG expand ở runner
-          TMP_DIR='$HOME/deploy_tmp/themes/vineye'
+  run: |
+    # Tạo thư mục tạm trên SERVER (dùng ~ để remote shell expand)
+    ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+      "mkdir -p ~/deploy_tmp/themes/vineye"
 
-          # tạo thư mục tạm trên server
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p $TMP_DIR"
-
-          # rsync duy nhất theme vineye
-          rsync -az --delete \
-            --omit-dir-times --no-perms --no-owner --no-group \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            themes/vineye/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:"$TMP_DIR/"
+    # Rsync đúng theme vineye lên đúng chỗ
+    rsync -az --delete \
+      --omit-dir-times --no-perms --no-owner --no-group \
+      --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+      -e "ssh -p ${{ secrets.SSH_PORT }}" \
+      themes/vineye/ \
+      ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/deploy_tmp/themes/vineye/
 
       # 2) VPS: rsync từ tmp -> TARGET_DIR (sudo), set quyền & reload PHP
       - name: Move to target with sudo & fix permissions
