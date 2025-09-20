@@ -94,7 +94,7 @@ add_action('wp_enqueue_scripts', function () {
     wp_enqueue_script(
         'bootstrap',
         'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-        ['jquery'],
+        [],
         '5.3.3',
         true
     );
