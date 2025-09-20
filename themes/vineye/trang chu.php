@@ -181,7 +181,7 @@ get_header();
                             echo '<div class="col-md-2">
                                     <div class="logo-item">
                                         <a href="https://alobacsi.com/trung-tam-mat-quoc-te-vin-eye-dong-hanh-giai-phong-tam-nhin-cho-hang-trieu-nguoi.html?gidzl=QeEnU7oSAYbdch1xUOCiA6ETj7XZZNmjBiFWVJNQSYrzaRegP8acV7YMkdeqZN0eBfFlVJKkAAjbTfWY90">
-                                        <img loading="lazy" decoding="async" style="margin-top: 20px"    width="200" height="92" src="' . $src . '" />
+                                        <img loading="lazy" decoding="async" style="margin-top: 20px"    width="200" height="92" src="' . $src . '" alt="Logo"/>
                                         </a>
                                     </div>
                                 </div>';
