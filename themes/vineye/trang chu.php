@@ -262,7 +262,7 @@ get_header();
                     <div class="dichvu-box text-center">
                         <?php if ($image): ?>
                         <div class="dichvu-img">
-                            <img src="<?php echo esc_url($image); ?>" alt="" class="img-fluid">
+                            <img src="<?php echo esc_url($image); ?>" alt="dich_vu" class="img-fluid">
                         </div>
                         <?php endif; ?>
 
