@@ -329,6 +329,32 @@ add_action('acf/init', function () {
   ]);
 });
 
+// functions.php
+add_filter('wp_get_attachment_image_attributes', function($attr, $attachment, $size){
+    if (is_front_page()) {
+        // CHỈ gắn cho ảnh hero/slide đầu tiên: bạn có thể kiểm bằng ID/ALT/class
+        if ( !empty($attr['class']) && strpos($attr['class'], 'hero-img') !== false ) {
+            $attr['loading']        = 'eager';
+            $attr['fetchpriority']  = 'high';
+            $attr['decoding']       = 'async';
+        }
+    }
+    return $attr;
+}, 10, 3);
+// functions.php
+add_action('wp_head', function () {
+    if (!is_front_page()) return;
+
+    // Lấy URL ảnh hero đầu tiên (tự thay bằng cách bạn truy ra URL)
+    $url = get_field('hero_image') ?: '';  // ví dụ ACF
+    if ($url) {
+        echo '<link rel="preload" as="image" href="'.$url.'" fetchpriority="high" imagesrcset="" imagesizes="100vw">';
+    }
+
+    // Nếu dùng Google Fonts/CDN ảnh: preconnect để giảm handshake
+    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+    echo '<link rel="preconnect" href="https://your-cdn.example" crossorigin>';
+});
 
 
 

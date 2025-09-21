@@ -1471,3 +1471,28 @@ body.nav-open .nav-overlay {
     display: block;
     /* tránh khoảng trống inline-img */
 }
+
+/* Giữ chỗ hero để trình duyệt render khung ngay lập tức */
+#swiper-container,
+#swiper-container .swiper,
+#swiper-container .swiper-wrapper {
+    aspect-ratio: 16/9;
+    min-height: 56vw;
+    max-height: 86vh;
+}
+
+@media (min-width:992px) {
+
+    #swiper-container,
+    #swiper-container .swiper,
+    #swiper-container .swiper-wrapper {
+        min-height: 36vw;
+    }
+}
+
+#swiper-container .swiper-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
