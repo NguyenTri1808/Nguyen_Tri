@@ -117,7 +117,7 @@ if ($group && is_array($group)) {
         <!-- Swiper CSS -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
 
-        <div id="swiper-container" class="container my-5">
+        <div id="swiper-container" class="swiper-container">
             <div class="swiper bv-features-swiper">
                 <div class="swiper-wrapper">
                     <?php foreach ($blocks as $b):
