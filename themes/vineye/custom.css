@@ -1438,3 +1438,36 @@ body.nav-open .nav-overlay {
         padding: 14px
     }
 }
+
+/* fix-CLS-home-page */
+/* giữ chỗ cho hero/swiper trước khi JS/ảnh tải */
+#swiper-container,
+#swiper-container .swiper,
+#swiper-container .swiper-wrapper {
+    min-height: 56vw;
+    /* tỉ lệ 16:9 ~ 56.25vw; tuỳ banner của bạn */
+    aspect-ratio: 16 / 9;
+    /* trình duyệt mới sẽ dùng cái này */
+    max-height: 86vh;
+}
+
+@media (min-width: 992px) {
+
+    #swiper-container,
+    #swiper-container .swiper,
+    #swiper-container .swiper-wrapper {
+        min-height: 36vw;
+        /* bạn đang dùng ~36vw trên desktop */
+    }
+}
+
+/* ảnh/slide full khung, không làm thay đổi chiều cao */
+#swiper-container .swiper-slide,
+#swiper-container .swiper-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* không co giãn làm thay đổi ratio */
+    display: block;
+    /* tránh khoảng trống inline-img */
+}
