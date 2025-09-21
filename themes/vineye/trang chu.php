@@ -5,7 +5,73 @@
 get_header();
 ?>
 
-<?php echo do_shortcode('[smartslider3 slider="2"]'); ?>
+<?php
+// Lấy group banners (ACF Free: return mảng các subfields)
+$group = get_field('banners');   // tên field group = banners
+
+if ($group && is_array($group)) {
+  // Gom các ảnh có key image1..imageN (không cần biết trước N)
+  $images = [];
+  foreach ($group as $key => $val) {
+    if (preg_match('/^image(\d+)$/', $key, $m)) {
+      // Chuẩn hóa về URL cho đủ mọi format ACF (url/id/array)
+      $url = '';
+      if (is_array($val)) {
+        // Nếu subfield là Image (array)
+        $url = $val['url'] ?? ($val['sizes']['1536x1536'] ?? $val['sizes']['large'] ?? $val['url'] ?? '');
+        if (!$url && !empty($val['ID'])) {
+          $url = wp_get_attachment_image_url((int)$val['ID'], 'full');
+        }
+      } elseif (is_numeric($val)) {
+        // Nếu subfield trả về ID
+        $url = wp_get_attachment_image_url((int)$val, 'full');
+      } else {
+        // Nếu subfield trả về URL
+        $url = $val;
+      }
+      if ($url) $images[(int)$m[1]] = esc_url($url);
+    }
+  }
+  ksort($images); // sắp xếp theo số thứ tự
+
+  if (!empty($images)) : ?>
+<section class="hero-slider position-relative">
+    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
+        <div class="carousel-inner">
+            <?php $i=0; foreach ($images as $idx => $src): $i++; ?>
+            <div class="carousel-item <?php echo $i===1 ? 'active' : ''; ?>">
+                <img src="<?php echo $src; ?>" class="d-block w-100 hero-img" alt="banner <?php echo (int)$idx; ?>"
+                    loading="<?php echo $i===1 ? 'eager':'lazy'; ?>"
+                    fetchpriority="<?php echo $i===1 ? 'high':'auto'; ?>">
+                <div class="hero-overlay"></div>
+                <!-- Nếu muốn caption, thêm HTML vào đây -->
+                <!--
+              <div class="container">
+                <div class="hero-caption text-white">
+                  <h2 class="display-6 fw-bold">Tiêu đề</h2>
+                  <p class="lead">Mô tả</p>
+                </div>
+              </div>
+              -->
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Nút điều hướng -->
+        <button class="carousel-control-prev hero-control" type="button" data-bs-target="#heroCarousel"
+            data-bs-slide="prev" aria-label="Prev">
+            <span class="hero-arrow">&lsaquo;</span>
+        </button>
+        <button class="carousel-control-next hero-control" type="button" data-bs-target="#heroCarousel"
+            data-bs-slide="next" aria-label="Next">
+            <span class="hero-arrow">&rsaquo;</span>
+        </button>
+    </div>
+</section>
+<?php endif;
+}
+?>
+
 
 <div class="container">
     <div class="row">
