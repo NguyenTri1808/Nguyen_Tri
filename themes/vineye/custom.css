@@ -7,11 +7,11 @@
 }
 
 a {
-    text-decoration: none
+    text-decoration: none;
 }
 
 a:hover {
-    text-decoration: none
+    text-decoration: none;
 }
 
 /* =========================
@@ -20,7 +20,6 @@ a:hover {
 :root {
     --brand: #1f4aa8;
     --header-compact-h: 48px;
-    /* CHIỀU CAO khi thu gọn (đã làm mỏng hơn) */
     --search-bg: #edf0f2;
 }
 
@@ -58,9 +57,7 @@ a:hover {
     text-underline-offset: .2rem;
 }
 
-/* màu link menu chung */
 .navbar-nav>li>a {
-    color: #204a9f;
     letter-spacing: .3px;
 }
 
@@ -426,64 +423,67 @@ a:hover {
     background: transparent
 }
 
-.mobile-nav__menu {
-    flex: 1 1 auto;
-    overflow: auto;
-    padding: 6px 0
-}
+/* ===== MOBILE NAV: bố cục 1 cột, cha trên – con dưới ===== */
 
-.mobile-menu {
-    list-style: none;
-    margin: 0;
-    padding: 0
-}
-
+/* Mỗi mục là 1 khối dọc, có vị trí tương đối để đặt nút ở mép phải */
 .mobile-menu>li {
     border-bottom: 1px solid var(--border);
-    display: flex
+    display: block;
+    position: relative;
 }
 
+/* Dòng tiêu đề của mục cha */
 .mobile-menu>li>a {
-    display: flex;
+    display: block;
     align-items: center;
     gap: 10px;
-    padding: 14px 16px;
+    padding: 14px 48px 14px 16px;
+    /* chừa chỗ cho nút bên phải */
     text-decoration: none;
     color: #222;
     font-weight: 700;
-    text-transform: uppercase
+    text-transform: uppercase;
 }
 
+/* Nút mũi tên ở cùng hàng với menu cha, canh phải */
 .mobile-menu .submenu-toggle {
+    position: absolute;
+    right: 6rem;
+    top: 1.5rem;
+    transform: translateY(-50%);
     width: 40px;
     height: 40px;
     border: 0;
     background: transparent;
     cursor: pointer;
+    color: var(--muted);
     font-size: 2rem;
-    color: var(--muted)
+    line-height: 1;
 }
 
 .mobile-menu .submenu-toggle:before {
     content: "▸";
     display: inline-block;
-    transition: transform .2s ease
+    transition: transform .2s ease;
 }
 
 .mobile-menu .submenu-toggle[aria-expanded="true"]:before {
-    transform: rotate(90deg)
+    transform: rotate(90deg);
 }
 
+/* Submenu hiển thị dưới cha, chiếm 100% bề ngang */
 .mobile-menu .sub-menu {
-    list-style: none;
+    display: none;
+    /* JS sẽ đổi thành block khi mở */
+    background: #fafafa;
     margin: 0;
     padding: 0;
-    display: none;
-    background: #fafafa
+    list-style: none;
 }
 
+/* Item con – thụt vào nhẹ */
 .mobile-menu .sub-menu li {
-    border-bottom: 1px dashed #eee
+    border-bottom: 1px dashed #eee;
 }
 
 .mobile-menu .sub-menu a {
@@ -492,7 +492,19 @@ a:hover {
     color: #333;
     text-decoration: none;
     font-weight: 600;
-    text-transform: none
+    text-transform: none;
+}
+
+/* (Tùy chọn) hiệu ứng trượt mượt khi mở */
+.mobile-nav__menu {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 6px 0;
+}
+
+.mobile-menu .sub-menu.is-anim {
+    overflow: hidden;
+    transition: max-height .25s ease;
 }
 
 .mobile-nav__footer {
@@ -642,7 +654,6 @@ body.nav-open .nav-overlay {
     color: #9a9c9e40;
     font-size: 5rem;
     line-height: 1;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
 }
 
 .carousel-control-prev {
@@ -653,9 +664,6 @@ body.nav-open .nav-overlay {
     right: 12px;
 }
 
-.hero-control:hover .hero-arrow {
-    background: #fff
-}
 
 /* Ẩn indicators nếu không dùng */
 .carousel-indicators {
