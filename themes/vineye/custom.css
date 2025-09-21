@@ -320,8 +320,54 @@ a:hover {
     letter-spacing: .02em;
 }
 
-/* Nếu còn #site-nav cũ cố định, nên ẩn để tránh xung đột */
-/* #site-nav{ display:none; } */
+/* header mobile */
+/* ==== Mobile: hamburger bên trái, logo giữa ==== */
+@media (max-width: 991.98px) {
+
+    /* Hàng header là flex – đổi thứ tự các cột */
+    #site-header .topbar .d-flex.align-items-center {
+        justify-content: center;
+        /* tổng thể căn giữa */
+        position: relative;
+    }
+
+    /* Cột chứa nút menu (header-tools) -> sang trái */
+    #site-header .header-tools {
+        order: 1;
+        margin-left: 0 !important;
+        /* override ms-auto */
+        margin-right: auto;
+        /* đẩy về trái */
+        justify-content: flex-start;
+        /* nút sát trái */
+        gap: 12px;
+        width: auto;
+        /* không chiếm full */
+    }
+
+    #site-header .header-tools .mobile-nav-toggle {
+        margin: 0;
+    }
+
+    /* Cột logo -> nằm giữa */
+    #site-header .logo-col {
+        order: 2;
+        margin-right: 40%;
+        text-align: center;
+        flex: 0 1 auto;
+    }
+
+    #site-header .logo-col .navbar-brand {
+        display: inline-block;
+    }
+
+    /* Ẩn menu desktop ở mobile (bạn đã d-none d-lg-block rồi, giữ thêm cho chắc) */
+    #site-header .col-md-8 nav {
+        display: none !important;
+    }
+
+}
+
 
 /* ====================END HEADER================== */
 
@@ -567,7 +613,7 @@ body.nav-open .nav-overlay {
     }
 
     .site-header .custom-logo {
-        max-height: 48px;
+        max-height: 6rem;
         width: auto
     }
 

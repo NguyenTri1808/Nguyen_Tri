@@ -21,7 +21,7 @@
                     <div class="d-flex align-items-center">
 
                         <!-- LOGO TRÁI -->
-                        <div class="col-md-2">
+                        <div class="col-md-2 logo-col">
                             <a class="navbar-brand m-0 p-0 d-inline-block" href="<?php echo esc_url(home_url('/')); ?>">
                                 <?php if (has_custom_logo()) { the_custom_logo(); } else { bloginfo('name'); } ?>
                             </a>
