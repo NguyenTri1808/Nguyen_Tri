@@ -290,31 +290,80 @@ if ($group && is_array($group)) {
         <!-- BÁC SĨ & CHUYÊN GIA MẮT -->
         <section class="doctors-section py-5">
             <div class="container">
+
+                <?php
+                // LẤY GROUP CHA "nhanvien"
+                $nv_raw = get_field('nhanvien');
+                $nv     = is_array($nv_raw) ? $nv_raw : [];
+
+                // --- TIÊU ĐỀ & MÔ TẢ ---
+                $nv_title   = (isset($nv['title']) && is_array($nv['title'])) ? $nv['title'] : [];
+                $nv_t1      = isset($nv_title['title1']) ? wp_strip_all_tags($nv_title['title1']) : '';
+                $nv_t2      = isset($nv_title['title2']) ? wp_strip_all_tags($nv_title['title2']) : '';
+                $nv_content = isset($nv['content']) ? $nv['content'] : ''; // WYSIWYG/textarea
+                ?>
+
                 <div class="title-doctors text-center mb-4">
-                    <h2 id="h2-bacsi-home">BÁC SĨ & CHUYÊN GIA </h2>
-                    <h2 id="h2-bacsi-home3"> MẮT</h2>
+                    <?php if ($nv_t1 !== ''): ?>
+                    <h2 id="h2-bacsi-home"><?php echo esc_html($nv_t1); ?></h2>
+                    <?php endif; ?>
+                    <?php if ($nv_t2 !== ''): ?>
+                    <h2 id="h2-bacsi-home3"><?php echo esc_html($nv_t2); ?></h2>
+                    <?php endif; ?>
                 </div>
+
                 <div class="text-doctors text-center mb-5">
-                    <p>ĐỘI NGŨ CHUYÊN SÂU – CHẤT LƯỢNG DẪN ĐẦU</p>
+                    <?php if (!empty($nv_content)): ?>
+                    <p><?php echo wp_kses_post($nv_content); ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <div class="row doctors-container">
-                    <?php 
-                    $nhanvien = get_field('nhanvien'); 
-                    if( $nhanvien && is_array($nhanvien) ): 
-                        foreach( $nhanvien as $group ):
-                            $image = !empty($group['image']) ? $group['image'] : '';
-                            $desc  = !empty($group['desc-nhanvien']) ? $group['desc-nhanvien'] : '';
-                            
-                            if( $image || $desc ):
-                    ?>
+                    <?php
+                // --- DANH SÁCH NHÂN VIÊN ---
+                // Bạn có thể đang dùng repeater cố định (vd: 'list' hoặc 'items').
+                // Đoạn dưới tự động:
+                // 1) Nếu tồn tại $nv['list'] (hoặc 'items') thì dùng nó.
+                // 2) Nếu không, fallback: dùng chính mảng $nv nhưng BỎ QUA 'title' và 'content',
+                //    và chỉ giữ những row có 'image'/'desc-nhanvien'.
+
+                $staff = [];
+                if (isset($nv['list']) && is_array($nv['list'])) {
+                    $staff = $nv['list'];
+                } elseif (isset($nv['items']) && is_array($nv['items'])) {
+                    $staff = $nv['items'];
+                } elseif (!empty($nv)) {
+                    // Fallback: lọc ra các phần tử giống cấu trúc cũ (image, desc-nhanvien)
+                    $staff = array_filter($nv, function($row, $key) {
+                    if ($key === 'title' || $key === 'content') return false;
+                    return is_array($row) && (isset($row['image']) || isset($row['desc-nhanvien']));
+                    }, ARRAY_FILTER_USE_BOTH);
+                }
+
+                if (!empty($staff)) :
+                    foreach ($staff as $group) :
+                    $image = !empty($group['image']) ? $group['image'] : '';
+                    $desc  = !empty($group['desc-nhanvien']) ? $group['desc-nhanvien'] : '';
+
+                    // Chuẩn hoá ảnh: ACF Image (array/ID/URL)
+                    $img_src = '';
+                    if (is_array($image) && isset($image['url'])) {
+                        $img_src = esc_url($image['url']);
+                    } elseif (is_numeric($image)) {
+                        $img_src = esc_url(wp_get_attachment_url($image));
+                    } elseif (is_string($image)) {
+                        $img_src = esc_url($image);
+                    }
+
+                    if ($img_src || $desc) :
+                ?>
                     <div class="col-md-4 mb-4">
                         <div class="card staff-card">
                             <div class="image-wrapper">
-                                <?php if( $image ): ?>
-                                <img src="<?php echo esc_url($image); ?>" alt="" class="img-fluid staff-img">
+                                <?php if ($img_src): ?>
+                                <img src="<?php echo $img_src; ?>" alt="" class="img-fluid staff-img">
                                 <?php endif; ?>
-                                <?php if( $desc ): ?>
+                                <?php if ($desc): ?>
                                 <div class="overlay">
                                     <p><?php echo nl2br(esc_html($desc)); ?></p>
                                 </div>
@@ -322,14 +371,15 @@ if ($group && is_array($group)) {
                             </div>
                         </div>
                     </div>
-                    <?php 
-                            endif;
-                        endforeach; 
-                    endif; 
-                    ?>
+                    <?php
+                    endif;
+                    endforeach;
+                endif;
+                ?>
                 </div>
             </div>
         </section>
+
 
         <!-- DỊCH VỤ UY TÍN TẠI VIN EYE -->
         <section>
