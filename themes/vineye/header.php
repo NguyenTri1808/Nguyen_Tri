@@ -105,18 +105,6 @@
                                     <a class="btn-hotline" href="tel:19009140">1900 9140</a>
                                 </div>
                             </aside>
-                            <!-- Language (mobile only) -->
-                            <?php if ( function_exists('pll_the_languages') ) : ?>
-                            <div class="lang-switch d-lg-none" aria-label="Language switcher">
-                                <?php pll_the_languages([
-                                'dropdown'       => 0,           // hiện dạng list đơn giản
-                                'show_flags'     => 1,           // cờ
-                                'show_names'     => 1,           // tên ngôn ngữ
-                                'hide_if_empty'  => 0,
-                                ]); ?>
-                            </div>
-                            <?php endif; ?>
-
                         </div><!-- /.header-tools -->
                     </div>
                 </div>
