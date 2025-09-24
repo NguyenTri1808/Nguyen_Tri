@@ -7,76 +7,68 @@
 }
 
 a {
-    text-decoration: none;
+    text-decoration: none
 }
 
 a:hover {
-    text-decoration: none;
+    text-decoration: none
 }
 
-/* =========================
-   HEADER (cleaned version)
-   ========================= */
 :root {
     --brand: #1f4aa8;
     --header-compact-h: 48px;
-    --search-bg: #edf0f2;
+    --search-bg: #edf0f2
 }
 
-/* Sticky header nền trắng */
 .site-header {
     background: #fff;
     z-index: 1050;
-    transition: box-shadow .2s ease;
+    transition: box-shadow .2s ease
 }
 
 .site-header.sticky-top {
-    top: 0;
+    top: 0
 }
 
-/* Chỉ áp dụng cho cụm trong header/topbar để tránh ảnh hưởng toàn site */
 #site-header .topbar .d-flex.align-items-center {
-    height: 5rem;
+    height: 5rem
 }
 
 .site-header.is-scrolled {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08)
 }
 
-/* ---------- MENU GIỮA ---------- */
 .mainmenu>li>a {
     padding: .8rem .35rem;
     color: #000;
     letter-spacing: .3px;
-    text-decoration: none;
+    text-decoration: none
 }
 
 .mainmenu>li>a:hover {
     color: #111;
     text-decoration: underline;
-    text-underline-offset: .2rem;
+    text-underline-offset: .2rem
 }
 
 .navbar-nav>li>a {
-    letter-spacing: .3px;
+    letter-spacing: .3px
 }
 
 .navbar-nav>li.current-menu-item>a,
 .navbar-nav>li>a:hover {
-    color: #000;
+    color: #000
 }
 
-/* mũi tên cho item có submenu */
 .navbar-nav .menu-item-has-children>a::after {
     content: "▾";
     font-size: .8rem;
-    margin-left: .25rem;
+    margin-left: .25rem
 }
 
-/* Dropdown (desktop) */
 @media (min-width:992px) {
     .navbar-nav .menu-item-has-children {
-        position: relative;
+        position: relative
     }
 
     .navbar-nav .menu-item-has-children>.sub-menu {
@@ -89,30 +81,29 @@ a:hover {
         border: 1px solid #e5e7eb;
         padding: .5rem 0;
         list-style: none;
-        z-index: 1000;
+        z-index: 1000
     }
 
     .navbar-nav .menu-item-has-children:hover>.sub-menu {
-        display: block;
+        display: block
     }
 
     .navbar-nav .sub-menu li a {
         display: block;
         padding: .5rem 1rem;
         white-space: nowrap;
-        color: #333;
+        color: #333
     }
 
     .navbar-nav .sub-menu li a:hover {
         background: #f5f7fa;
-        color: #000;
+        color: #000
     }
 }
 
-/* ---------- TÌM KIẾM + HOTLINE ---------- */
 .header-search {
     width: 320px;
-    position: relative;
+    position: relative
 }
 
 .header-search .form-control {
@@ -121,17 +112,17 @@ a:hover {
     border: 0;
     border-radius: .25rem;
     padding: .5rem 2.25rem .5rem .75rem;
-    box-shadow: none;
+    box-shadow: none
 }
 
 .header-search .form-control::placeholder {
-    color: #9aa3af;
+    color: #9aa3af
 }
 
 .header-search .form-control:focus {
     outline: 0;
     box-shadow: none;
-    border-color: var(--brand);
+    border-color: var(--brand)
 }
 
 .header-search .header-search-btn,
@@ -142,40 +133,38 @@ a:hover {
     transform: translateY(-50%);
     background: transparent;
     border: 0;
-    padding: 0;
+    padding: 0
 }
 
 .btn-call {
     color: var(--brand);
-    border-color: var(--brand);
+    border-color: var(--brand)
 }
 
 .btn-call:hover {
     color: #fff;
-    background: var(--brand);
+    background: var(--brand)
 }
 
-/* Logo */
 .site-header .custom-logo {
     max-height: 7rem;
-    width: auto;
+    width: auto
 }
 
-/* ---------- NAVBAR MOBILE ---------- */
 #mainNav .navbar-nav>li>a {
     padding: .65rem 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee
 }
 
 @media (max-width:991.98px) {
     .header-search {
-        width: 100%;
+        width: 100%
     }
 
     .header-tools {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 12px
     }
 
     .header-tools .header-search .form-control {
@@ -183,27 +172,26 @@ a:hover {
         border-bottom: 1px solid #e5e7eb;
         border-radius: 0;
         padding: 10px 40px 10px 0;
-        background: #fff;
+        background: #fff
     }
 
     .header-tools .header-search .form-control::placeholder {
-        color: #9aa3af;
+        color: #9aa3af
     }
 
     .navbar .navbar-toggler {
-        margin-left: 0;
+        margin-left: 0
     }
 
     #mainNav.collapse:not(.show) {
-        display: none;
+        display: none
     }
 
     #mainNav.collapse.show {
-        display: block;
+        display: block
     }
 }
 
-/* ---------- ICONS / BADGES (nếu dùng) ---------- */
 .tools-icons .tool-icon {
     display: inline-flex;
     align-items: center;
@@ -211,11 +199,11 @@ a:hover {
     width: 32px;
     height: 32px;
     color: #000;
-    text-decoration: none;
+    text-decoration: none
 }
 
 .tools-icons .tool-icon:hover {
-    color: #111;
+    color: #111
 }
 
 .badge-count {
@@ -231,7 +219,7 @@ a:hover {
     font-size: 11px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center
 }
 
 .badge-dot {
@@ -246,29 +234,25 @@ a:hover {
     font-size: 11px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center
 }
 
-/* ---------- COMPACT HEADER (desktop) ----------
-   Khi cuộn: ẩn logo + tools, chỉ còn menu và header mỏng */
 @media (min-width:992px) {
 
     .site-header .navbar-brand,
     .site-header .header-tools {
-        transition: opacity .18s ease, visibility .18s ease, transform .18s ease;
+        transition: opacity .18s ease, visibility .18s ease, transform .18s ease
     }
 
-    /* Ép chiều cao mỏng + căn giữa dọc khi compact */
     .site-header.is-compact .topbar,
     .site-header.is-compact .container>.d-flex {
         padding-top: 0;
         padding-bottom: 0;
         min-height: var(--header-compact-h);
         display: flex;
-        align-items: center;
+        align-items: center
     }
 
-    /* Ẩn logo + tools */
     .site-header.is-compact .navbar-brand,
     .site-header.is-compact .navbar-brand *,
     .site-header.is-compact .custom-logo-link,
@@ -278,99 +262,80 @@ a:hover {
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transform: translateY(-8px);
+        transform: translateY(-8px)
     }
 
-    /* Menu gọn hơn khi compact */
     .site-header .mainmenu {
         margin: 0;
         padding: 0;
-        transition: padding .18s ease, margin .18s ease;
+        transition: padding .18s ease, margin .18s ease
     }
 
     .site-header.is-compact .mainmenu {
         margin-left: auto;
-        margin-right: auto;
+        margin-right: auto
     }
 
     .site-header .mainmenu>li>a {
         padding: 12px 10px;
-        line-height: 1.2;
+        line-height: 1.2
     }
 
     .site-header.is-compact .mainmenu>li>a {
-        padding: 8px 10px;
+        padding: 8px 10px
     }
 }
 
-/* ---------- Phụ trợ nhỏ ---------- */
 .topbar {
-    border-bottom: 1px solid #eef0f3;
+    border-bottom: 1px solid #eef0f3
 }
 
 .navbar {
-    background: #fff;
+    background: #fff
 }
 
 .header-utility {
-    background: #fff;
+    background: #fff
 }
 
 .header-utility a {
-    letter-spacing: .02em;
+    letter-spacing: .02em
 }
 
-/* header mobile */
-/* ==== Mobile: hamburger bên trái, logo giữa ==== */
-@media (max-width: 991.98px) {
-
-    /* Hàng header là flex – đổi thứ tự các cột */
+@media (max-width:991.98px) {
     #site-header .topbar .d-flex.align-items-center {
         justify-content: center;
-        /* tổng thể căn giữa */
-        position: relative;
+        position: relative
     }
 
-    /* Cột chứa nút menu (header-tools) -> sang trái */
     #site-header .header-tools {
         order: 1;
         margin-left: 0 !important;
-        /* override ms-auto */
         margin-right: auto;
-        /* đẩy về trái */
         justify-content: flex-start;
-        /* nút sát trái */
         gap: 12px;
-        width: auto;
-        /* không chiếm full */
+        width: auto
     }
 
     #site-header .header-tools .mobile-nav-toggle {
-        margin: 0;
+        margin: 0
     }
 
-    /* Cột logo -> nằm giữa */
     #site-header .logo-col {
         order: 2;
         margin-right: 40%;
         text-align: center;
-        flex: 0 1 auto;
+        flex: 0 1 auto
     }
 
     #site-header .logo-col .navbar-brand {
-        display: inline-block;
+        display: inline-block
     }
 
-    /* Ẩn menu desktop ở mobile (bạn đã d-none d-lg-block rồi, giữ thêm cho chắc) */
     #site-header .col-md-8 nav {
-        display: none !important;
+        display: none !important
     }
-
 }
-
-
-/* ====================END HEADER================== */
-
 
 :root {
     --nav-width: 84vw;
@@ -469,29 +434,23 @@ a:hover {
     background: transparent
 }
 
-/* ===== MOBILE NAV: bố cục 1 cột, cha trên – con dưới ===== */
-
-/* Mỗi mục là 1 khối dọc, có vị trí tương đối để đặt nút ở mép phải */
 .mobile-menu>li {
     border-bottom: 1px solid var(--border);
     display: block;
-    position: relative;
+    position: relative
 }
 
-/* Dòng tiêu đề của mục cha */
 .mobile-menu>li>a {
     display: block;
     align-items: center;
     gap: 10px;
     padding: 14px 48px 14px 16px;
-    /* chừa chỗ cho nút bên phải */
     text-decoration: none;
     color: #222;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: uppercase
 }
 
-/* Nút mũi tên ở cùng hàng với menu cha, canh phải */
 .mobile-menu .submenu-toggle {
     position: absolute;
     right: 6rem;
@@ -504,32 +463,29 @@ a:hover {
     cursor: pointer;
     color: var(--muted);
     font-size: 2rem;
-    line-height: 1;
+    line-height: 1
 }
 
 .mobile-menu .submenu-toggle:before {
     content: "▸";
     display: inline-block;
-    transition: transform .2s ease;
+    transition: transform .2s ease
 }
 
 .mobile-menu .submenu-toggle[aria-expanded="true"]:before {
-    transform: rotate(90deg);
+    transform: rotate(90deg)
 }
 
-/* Submenu hiển thị dưới cha, chiếm 100% bề ngang */
 .mobile-menu .sub-menu {
     display: none;
-    /* JS sẽ đổi thành block khi mở */
     background: #fafafa;
     margin: 0;
     padding: 0;
-    list-style: none;
+    list-style: none
 }
 
-/* Item con – thụt vào nhẹ */
 .mobile-menu .sub-menu li {
-    border-bottom: 1px dashed #eee;
+    border-bottom: 1px dashed #eee
 }
 
 .mobile-menu .sub-menu a {
@@ -538,19 +494,18 @@ a:hover {
     color: #333;
     text-decoration: none;
     font-weight: 600;
-    text-transform: none;
+    text-transform: none
 }
 
-/* (Tùy chọn) hiệu ứng trượt mượt khi mở */
 .mobile-nav__menu {
     flex: 1 1 auto;
     overflow: auto;
-    padding: 6px 0;
+    padding: 6px 0
 }
 
 .mobile-menu .sub-menu.is-anim {
     overflow: hidden;
-    transition: max-height .25s ease;
+    transition: max-height .25s ease
 }
 
 .mobile-nav__footer {
@@ -649,31 +604,25 @@ body.nav-open .nav-overlay {
     }
 }
 
-/* Banner */
-/* Tỷ lệ & fit ảnh banner */
 .hero-slider .hero-img {
     height: 60vw;
     max-height: 86vh;
-    object-fit: cover;
+    object-fit: cover
 }
 
 @media (min-width:992px) {
     .hero-slider .hero-img {
-        height: 36vw;
+        height: 36vw
     }
 }
 
-/* Overlay xanh ánh sáng (gợi hình cong sáng như ảnh) */
 .hero-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background:
-        radial-gradient(120% 100% at 50% 0%, rgba(0, 150, 255, .25) 0, rgba(0, 60, 180, .35) 40%, rgba(0, 20, 80, .65) 100%),
-        linear-gradient(0deg, rgba(0, 0, 0, .12), rgba(0, 0, 0, .12));
+    background: radial-gradient(120% 100% at 50% 0%, rgba(0, 150, 255, .25) 0, rgba(0, 60, 180, .35) 40%, rgba(0, 20, 80, .65) 100%), linear-gradient(0deg, rgba(0, 0, 0, .12), rgba(0, 0, 0, .12))
 }
 
-/* Caption giữa (nếu dùng) */
 .hero-caption {
     position: absolute;
     left: 50%;
@@ -681,13 +630,12 @@ body.nav-open .nav-overlay {
     transform: translate(-50%, -50%);
     text-align: center;
     max-width: 900px;
-    text-shadow: 0 6px 22px rgba(0, 0, 0, .45);
+    text-shadow: 0 6px 22px rgba(0, 0, 0, .45)
 }
 
-/* Nút điều hướng dạng hình tròn nền trắng */
 .hero-control {
     width: auto;
-    opacity: 1;
+    opacity: 1
 }
 
 .hero-control .hero-arrow {
@@ -699,21 +647,19 @@ body.nav-open .nav-overlay {
     border-radius: 50%;
     color: #9a9c9e40;
     font-size: 5rem;
-    line-height: 1;
+    line-height: 1
 }
 
 .carousel-control-prev {
-    left: 12px;
+    left: 12px
 }
 
 .carousel-control-next {
-    right: 12px;
+    right: 12px
 }
 
-
-/* Ẩn indicators nếu không dùng */
 .carousel-indicators {
-    display: none;
+    display: none
 }
 
 @media (min-width:992px) {
@@ -846,7 +792,6 @@ body.nav-open .nav-overlay {
     display: block
 }
 
-/* ==Bao chi== */
 .logo-container {
     display: flex
 }
@@ -1187,7 +1132,6 @@ body.nav-open .nav-overlay {
     transition: transform .2s ease
 }
 
-/* ==Khuyến mãi==   */
 #box-khuyenmai {
     margin-top: 50px;
     margin-bottom: 50px
@@ -1439,63 +1383,48 @@ body.nav-open .nav-overlay {
     }
 }
 
-/* fix_CLS */
-/* === HERO / SWIPER – responsive ratio, anti-CLS === */
-/* Mặc định (tablet) tỉ lệ 16:9, cao tối đa 72vh */
 #swiper-container,
 #swiper-container .swiper,
 #swiper-container .swiper-wrapper {
     width: 100%;
     aspect-ratio: 16 / 9;
-    /* giữ chỗ, tránh CLS */
-    max-height: 72vh;
-    /* đừng cao quá màn hình */
+    max-height: 72vh
 }
 
-/* Ảnh full khung, không méo hình */
 #swiper-container .swiper-slide,
 #swiper-container .swiper-slide img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* phủ kín khung, không méo */
-    display: block;
+    display: block
 }
 
-/* ---------- Mobile: cao hơn, đọc dễ, không tràn ---------- */
-@media (max-width: 575.98px) {
+@media (max-width:575.98px) {
 
     #swiper-container,
     #swiper-container .swiper,
     #swiper-container .swiper-wrapper {
         aspect-ratio: 9 / 14;
-        /* cao hơn 16:9 -> khoảng 0.64 */
         min-height: 64vh;
-        /* đảm bảo đủ chiều cao */
-        max-height: 86vh;
-        /* vẫn không vượt quá màn hình */
+        max-height: 86vh
     }
 }
 
-/* ---------- Desktop: ngắn hơn nhưng rộng hơn (cinematic) ---------- */
-@media (min-width: 992px) {
+@media (min-width:992px) {
 
     #swiper-container,
     #swiper-container .swiper,
     #swiper-container .swiper-wrapper {
         aspect-ratio: 21 / 9;
-        /* rộng hơn 16:9 -> header trông thoáng */
-        max-height: 60vh;
-        /* ngắn lại, bớt chiếm chỗ */
+        max-height: 60vh
     }
 }
 
-/* ---------- Desktop lớn: có thể ngắn thêm chút ---------- */
-@media (min-width: 1400px) {
+@media (min-width:1400px) {
 
     #swiper-container,
     #swiper-container .swiper,
     #swiper-container .swiper-wrapper {
-        max-height: 54vh;
+        max-height: 54vh
     }
 }

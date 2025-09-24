@@ -502,7 +502,7 @@ if ($group && is_array($group)) {
                 $q = new WP_Query([
                 'post_type'           => 'post',
                 'posts_per_page'      => 3,
-                'category_name'       => 'khuyenmai', // đổi nếu cần
+                'category_name'       => 'khuyenmai,special_offer', // đổi nếu cần
                 'orderby'             => 'date',
                 'order'               => 'DESC',
                 'ignore_sticky_posts' => true,
