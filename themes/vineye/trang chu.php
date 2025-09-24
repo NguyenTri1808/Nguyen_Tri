@@ -383,31 +383,69 @@ if ($group && is_array($group)) {
 
         <!-- DỊCH VỤ UY TÍN TẠI VIN EYE -->
         <section>
+            <?php
+            // LẤY GROUP CHA "dichvu"
+            $dv_raw = get_field('dichvu');
+            $dv     = is_array($dv_raw) ? $dv_raw : [];
+
+            // --- TIÊU ĐỀ & MÔ TẢ ---
+            $dv_title   = (isset($dv['title']) && is_array($dv['title'])) ? $dv['title'] : [];
+            $dv_t1      = isset($dv_title['title1']) ? wp_strip_all_tags($dv_title['title1']) : '';
+            $dv_t2      = isset($dv_title['title2']) ? wp_strip_all_tags($dv_title['title2']) : '';
+            $dv_content = isset($dv['content']) ? $dv['content'] : ''; // WYSIWYG/textarea
+            ?>
             <div class="title-doctors">
-                <h2 id="h2-bacsi-home">DỊCH VỤ UY TÍN </h2>
-                <h2 id="h2-bacsi-home3"> TẠI VIN EYE</h2>
+                <?php if ($dv_t1 !== ''): ?>
+                <h2 id="h2-bacsi-home"><?php echo esc_html($dv_t1); ?></h2>
+                <?php endif; ?>
+                <?php if ($dv_t2 !== ''): ?>
+                <h2 id="h2-bacsi-home3"><?php echo esc_html($dv_t2); ?></h2>
+                <?php endif; ?>
             </div>
+
             <div class="text-doctors">
-                <p>TOP NHỮNG DỊCH VỤ ĐƯỢC KHÁCH HÀNG SỬ DỤNG</p>
+                <?php if (!empty($dv_content)): ?>
+                <p><?php echo wp_kses_post($dv_content); ?></p>
+                <?php endif; ?>
             </div>
+
             <div class="row dichvu-container">
-                <?php 
-                // Lấy group cha
-                $dichvu = get_field('dichvu');
+                <?php
+                // --- DANH SÁCH DỊCH VỤ ---
+                // Nếu bạn có repeater rõ ràng (vd: $dv['list']), dùng nó:
+                $items = [];
+                if (isset($dv['list']) && is_array($dv['list'])) {
+                $items = $dv['list'];
+                } else {
+                // Fallback: duyệt trực tiếp $dv nhưng BỎ QUA 'title', 'content'
+                $items = array_filter($dv, function($row, $key) {
+                    if ($key === 'title' || $key === 'content') return false;
+                    return is_array($row) && (isset($row['name-dichvu']) || isset($row['image-dichvu']));
+                }, ARRAY_FILTER_USE_BOTH);
+                }
 
-                if ( $dichvu && is_array($dichvu) ) :
-                    foreach ($dichvu as $key => $group) :
-                        // Mỗi group con chính là dichvu1, dichvu2...
-                        $name  = isset($group['name-dichvu']) ? $group['name-dichvu'] : '';
-                        $image = isset($group['image-dichvu']) ? $group['image-dichvu'] : '';
+                if (!empty($items)) :
+                foreach ($items as $group) :
+                    $name  = isset($group['name-dichvu'])  ? $group['name-dichvu']  : '';
+                    $image = isset($group['image-dichvu']) ? $group['image-dichvu'] : '';
 
-                        if ( $name || $image ) :
+                    // Chuẩn hoá ảnh: ACF Image (array/ID/URL)
+                    $img_src = '';
+                    if (is_array($image) && isset($image['url'])) {
+                    $img_src = esc_url($image['url']);
+                    } elseif (is_numeric($image)) {
+                    $img_src = esc_url(wp_get_attachment_url($image));
+                    } elseif (is_string($image)) {
+                    $img_src = esc_url($image);
+                    }
+
+                    if ($name || $img_src) :
                 ?>
                 <div class="col-md-3 col-6 mb-4">
                     <div class="dichvu-box text-center">
-                        <?php if ($image): ?>
+                        <?php if ($img_src): ?>
                         <div class="dichvu-img">
-                            <img src="<?php echo esc_url($image); ?>" alt="dich_vu" class="img-fluid">
+                            <img src="<?php echo $img_src; ?>" alt="dich_vu" class="img-fluid">
                         </div>
                         <?php endif; ?>
 
@@ -418,13 +456,14 @@ if ($group && is_array($group)) {
                         <?php endif; ?>
                     </div>
                 </div>
-                <?php 
-                        endif;
-                    endforeach;
+                <?php
+                    endif;
+                endforeach;
                 endif;
                 ?>
             </div>
         </section>
+
 
     </div>
 </div>
@@ -433,110 +472,142 @@ if ($group && is_array($group)) {
 <!-- CƠ SỞ VẬT CHẤT TẠI VIN EYE -->
 <section class="facility-section py-5">
     <div class="container">
+        <?php
+        // LẤY GROUP CHA "vatchat"
+        $vc_raw = get_field('vatchat');
+        $vc     = is_array($vc_raw) ? $vc_raw : [];
+
+        // LẤY TRỰC TIẾP 2 FIELD: title, content
+        $vc_title   = isset($vc['title'])   ? wp_strip_all_tags($vc['title']) : '';
+        $vc_content = isset($vc['content']) ? $vc['content']                  : '';
+        ?>
         <!-- Tiêu đề -->
         <div id="text-center-vatchat" class="col medium-8 small-12 large-8 mx-auto text-center mb-4">
-            <h3 class="facility-title">CƠ SỞ VẬT CHẤT 5 SAO</h3>
-            <p class="facility-subtitle">
-                Hệ thống trang thiết bị y tế hiện đại bậc nhất được nhập khẩu từ các nước Anh, Mỹ, Đức
-            </p>
+            <?php if ($vc_title !== ''): ?>
+            <h3 class="facility-title"><?php echo esc_html($vc_title); ?></h3>
+            <?php endif; ?>
+            <?php if ($vc_content !== ''): ?>
+            <p class="facility-subtitle"><?php echo wp_kses_post($vc_content); ?></p>
+            <?php endif; ?>
         </div>
 
         <!-- Hình ảnh -->
         <div id="box-vatchat" class="row justify-content-center bg-white p-4 rounded shadow-sm mx-2">
-            <?php 
-            // Lấy group cha "vatchat"
-            $vatchat = get_field('vatchat');
+            <?php
+        // Nếu bạn có repeater rõ ràng (vd: $vc['list']), ưu tiên dùng:
+        $items = [];
+        if (isset($vc['list']) && is_array($vc['list'])) {
+            $items = $vc['list'];
+        } else {
+            // Fallback: duyệt trực tiếp $vc, BỎ QUA 'title' & 'content'
+            $items = array_filter($vc, function($row, $key) {
+            if ($key === 'title' || $key === 'content') return false;
+            return is_array($row) && !empty($row['image-vatchat']);
+            }, ARRAY_FILTER_USE_BOTH);
+        }
 
-            if ( $vatchat && is_array($vatchat) ) :
-                foreach ($vatchat as $group) :
-                    $image = !empty($group['image-vatchat']) ? $group['image-vatchat'] : '';
+        if (!empty($items)) :
+            foreach ($items as $group) :
+            $image = $group['image-vatchat'] ?? '';
 
-                    if ($image) :
-            ?>
+            // Chuẩn hoá ảnh: hỗ trợ ACF Image array/ID/URL
+            $img_src = '';
+            if (is_array($image) && isset($image['url'])) {
+                $img_src = esc_url($image['url']);
+            } elseif (is_numeric($image)) {
+                $img_src = esc_url(wp_get_attachment_url($image));
+            } elseif (is_string($image)) {
+                $img_src = esc_url($image);
+            }
+
+            if ($img_src):
+        ?>
             <div class="col-md-3 col-6">
                 <div class="facility-item">
-                    <img src="<?php echo esc_url($image); ?>" alt="Cơ sở vật chất" class="img-fluid rounded shadow"
+                    <img src="<?php echo $img_src; ?>" alt="Cơ sở vật chất" class="img-fluid rounded shadow"
                         id="img-vatchat-home">
-
                 </div>
             </div>
-            <?php 
-                    endif;
-                endforeach;
+            <?php
             endif;
-            ?>
+            endforeach;
+        endif;
+        ?>
         </div>
     </div>
 </section>
-<!-- Video tại vineye -->
+
+
 <div class="container">
     <div class="row">
 
         <!-- Kết quả của khách hàng -->
         <section>
-            <div class="title-doctors">
-                <h2 id="h2-bacsi-home3">KẾT QUẢ </h2>
-                <h2 id="h2-bacsi-home"> CỦA KHÁCH HÀNG</h2>
-            </div>
-            <div class="text-doctors">
-                <p>TOP NHỮNG DỊCH VỤ ĐƯỢC KHÁCH HÀNG SỬ DỤNG</p>
-            </div>
             <?php
-            /**
-             * Helper: nhận value ACF (ID | URL | array) -> trả về thẻ <img> hoàn chỉnh.
-             */
-            function ve_img_tag($raw, $size = 'large', $class = '') {
-            if (empty($raw)) return '';
+            // ====== LẤY GROUP CHA "ketqua" ======
+            $kq_raw = get_field('ketqua');
+            $kq     = is_array($kq_raw) ? $kq_raw : [];
 
-            // ACF trả về dạng array
-            if (is_array($raw)) {
-                $id  = $raw['ID'] ?? ($raw['id'] ?? null);
-                $url = $raw['url'] ?? null;
-                $alt = isset($raw['alt']) ? $raw['alt'] : '';
+            // --- TIÊU ĐỀ & MÔ TẢ ---
+            $kq_title   = (isset($kq['title']) && is_array($kq['title'])) ? $kq['title'] : [];
+            $kq_t1      = isset($kq_title['title1']) ? wp_strip_all_tags($kq_title['title1']) : '';
+            $kq_t2      = isset($kq_title['title2']) ? wp_strip_all_tags($kq_title['title2']) : '';
+            $kq_content = isset($kq['content']) ? $kq['content'] : ''; // WYSIWYG/textarea
+            ?>
 
-                if ($id)  return wp_get_attachment_image((int)$id, $size, false, ['class'=>$class, 'loading'=>'lazy']);
-                if ($url) return '<img src="'.esc_url($url).'" alt="'.esc_attr($alt).'" class="'.esc_attr($class).'" loading="lazy">';
+            <div class="title-doctors">
+                <?php if ($kq_t1 !== ''): ?>
+                <h2 id="h2-bacsi-home3"><?php echo esc_html($kq_t1); ?></h2>
+                <?php endif; ?>
+                <?php if ($kq_t2 !== ''): ?>
+                <h2 id="h2-bacsi-home"><?php echo esc_html($kq_t2); ?></h2>
+                <?php endif; ?>
+            </div>
+
+            <div class="text-doctors">
+                <?php if (!empty($kq_content)): ?>
+                <p><?php echo wp_kses_post($kq_content); ?></p>
+                <?php endif; ?>
+            </div>
+
+            <?php
+            // ====== HELPER ẢNH (giữ như cũ) ======
+            if (!function_exists('ve_img_tag')) {
+                function ve_img_tag($raw, $size = 'large', $class = '') {
+                if (empty($raw)) return '';
+                if (is_array($raw)) {
+                    $id  = $raw['ID'] ?? ($raw['id'] ?? null);
+                    $url = $raw['url'] ?? null;
+                    $alt = isset($raw['alt']) ? $raw['alt'] : '';
+                    if ($id)  return wp_get_attachment_image((int)$id, $size, false, ['class'=>$class, 'loading'=>'lazy']);
+                    if ($url) return '<img src="'.esc_url($url).'" alt="'.esc_attr($alt).'" class="'.esc_attr($class).'" loading="lazy">';
+                    return '';
+                }
+                if (is_numeric($raw)) {
+                    return wp_get_attachment_image((int)$raw, $size, false, ['class'=>$class, 'loading'=>'lazy']);
+                }
+                if (filter_var($raw, FILTER_VALIDATE_URL)) {
+                    return '<img src="'.esc_url($raw).'" alt="" class="'.esc_attr($class).'" loading="lazy">';
+                }
                 return '';
-            }
-
-            // ACF trả về ID
-            if (is_numeric($raw)) {
-                return wp_get_attachment_image((int)$raw, $size, false, ['class'=>$class, 'loading'=>'lazy']);
-            }
-
-            // ACF trả về URL
-            if (filter_var($raw, FILTER_VALIDATE_URL)) {
-                return '<img src="'.esc_url($raw).'" alt="" class="'.esc_attr($class).'" loading="lazy">';
-            }
-
-            return '';
-            }
-
-            /**
-             * Lấy group 'ketqua' và quét tất cả field có tên imageN
-             */
-            $group = get_field('ketqua');
-            $imgs  = [];
-
-            if (is_array($group)) {
-            foreach ($group as $key => $val) {
-                // Nhận các key dạng image1, image2, image10...
-                if (preg_match('/^image(\d+)$/i', $key, $m)) {
-                $order = (int) $m[1];
-                $imgs[$order] = $val;
                 }
             }
+
+            // ====== QUÉT CÁC FIELD imageN TRONG 'ketqua' ======
+            $imgs = [];
+            if (!empty($kq) && is_array($kq)) {
+                foreach ($kq as $key => $val) {
+                if (preg_match('/^image(\d+)$/i', $key, $m)) {
+                    $order = (int) $m[1];
+                    $imgs[$order] = $val;
+                }
+                }
             }
 
-            // Không có gì để hiển thị
-            if (empty($imgs)) return;
-
-            // Sắp xếp tăng dần theo số N
-            ksort($imgs, SORT_NUMERIC);
-            $imgs = array_values($imgs);
-
-            // Ảnh lớn đầu tiên bên trái
-            $big  = array_shift($imgs);
+            if (!empty($imgs)) :
+                ksort($imgs, SORT_NUMERIC);
+                $imgs = array_values($imgs);
+                $big  = array_shift($imgs);
             ?>
             <section class="ketqua-gallery">
                 <div class="ketqua-grid">
@@ -545,16 +616,17 @@ if ($group && is_array($group)) {
                     </div>
 
                     <div class="ketqua-right">
-                        <?php
-                // Các ảnh còn lại thành lưới 3 cột
-                foreach ($imgs as $img) {
-                    echo '<div class="ketqua-thumb">'. ve_img_tag($img, 'medium_large', 'ketqua-thumb-img') .'</div>';
-                }
-                ?>
+                        <?php foreach ($imgs as $img): ?>
+                        <div class="ketqua-thumb">
+                            <?php echo ve_img_tag($img, 'medium_large', 'ketqua-thumb-img'); ?>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </section>
+            <?php endif; ?>
         </section>
+
         <!-- CHƯƠNG TRÌNH KHUYẾN MẠI  -->
         <section>
             <?php
