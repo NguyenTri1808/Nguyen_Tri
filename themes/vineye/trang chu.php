@@ -219,9 +219,21 @@ if ($group && is_array($group)) {
 
         <!-- Báo Chí Nói Gì Về Chúng Tôi -->
         <section class="partner-logos">
+            <?php
+            // LẤY GROUP CHA "baochi"
+            $bc = get_field('baochi');
+
+            // Tiêu đề: group con "title" với 2 field "title1", "title2"
+            $bc_t1 = is_array($bc) ? ($bc['title']['title1'] ?? '') : '';
+            $bc_t2 = is_array($bc) ? ($bc['title']['title2'] ?? '') : '';
+            ?>
             <div class="title-baochi">
-                <h2 id="h2-baochi-home">Báo Chí </h2>
-                <h2 id="h2-baochi-home2"> Nói Gì Về Chúng Tôi</h2>
+                <?php if ($bc_t1): ?>
+                <h2 id="h2-baochi-home"><?php echo esc_html($bc_t1); ?></h2>
+                <?php endif; ?>
+                <?php if ($bc_t2): ?>
+                <h2 id="h2-baochi-home2"><?php echo esc_html($bc_t2); ?></h2>
+                <?php endif; ?>
             </div>
 
             <div class="logo-container row">
