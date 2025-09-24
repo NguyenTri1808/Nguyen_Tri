@@ -20,22 +20,22 @@ get_header();
 
         // Render (tuỳ biến HTML theo ý bạn)
         if ($bg_title || $bg_content): ?>
-        <section class="bg-content-block py-5">
-            <div class="container">
+    <section class="bg-content-block py-5">
+        <div class="container">
             <?php if ($bg_title): ?>
-                <h1 class="display-5 fw-bold text-white mb-3">
+            <h1 class="display-5 fw-bold text-white mb-3">
                 <?php echo esc_html($bg_title); ?>
-                </h1>
+            </h1>
             <?php endif; ?>
 
             <?php if ($bg_content): ?>
-                <div class="lead text-white-50">
+            <div class="lead text-white-50">
                 <?php echo wpautop( wp_kses_post($bg_content) ); ?>
-                </div>
-            <?php endif; ?>
             </div>
-        </section>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 
 </div>
 <?php
@@ -45,7 +45,7 @@ $left    = is_array($lien_he['left_content'] ?? null) ? $lien_he['left_content']
 $title   = $left['title'] ?? '';
 $content = $left['content'] ?? '';
 
-$map_title = $lien_he['map_title'] ?? 'BẢN ĐỒ GOOGLE MAPS';
+$map_title = $lien_he['map_title'] ?? 'GOOGLE MAPS';
 $lat = isset($lien_he['map_lat']) ? (float)$lien_he['map_lat'] : 0;
 $lng = isset($lien_he['map_lng']) ? (float)$lien_he['map_lng'] : 0;
 $zoom = isset($lien_he['map_zoom']) ? (int)$lien_he['map_zoom'] : 16;
@@ -61,27 +61,27 @@ function ve_gmap_embed_src($lat, $lng, $zoom = 16, $lang = 'vi') {
 ?>
 
 <section class="contact-section py-5">
-  <div class="container">
-    <div class="row g-5 align-items-start">
-      <!-- Left -->
-      <div class="col-12 col-lg-6">
-        <?php if ($title): ?>
-          <h2 class="h2 fw-bold text-uppercase mb-4"><?php echo esc_html($title); ?></h2>
-        <?php endif; ?>
-        <?php if ($content): ?>
-          <div class="contact-left-content">
-            <?php echo wpautop( wp_kses_post($content) ); ?>
-          </div>
-        <?php endif; ?>
-      </div>
+    <div class="container">
+        <div class="row g-5 align-items-start">
+            <!-- Left -->
+            <div class="col-12 col-lg-6">
+                <?php if ($title): ?>
+                <h2 class="h2 fw-bold text-uppercase mb-4"><?php echo esc_html($title); ?></h2>
+                <?php endif; ?>
+                <?php if ($content): ?>
+                <div class="contact-left-content">
+                    <?php echo wpautop( wp_kses_post($content) ); ?>
+                </div>
+                <?php endif; ?>
+            </div>
 
-      <!-- Right: Map -->
-      <div class="col-12 col-lg-6">
-        <h2 class="h2 fw-bold text-uppercase mb-4"><?php echo esc_html($map_title); ?></h2>
-        <div class="ratio ratio-16x9 rounded overflow-hidden shadow-sm">
-          <?php
+            <!-- Right: Map -->
+            <div class="col-12 col-lg-6">
+                <h2 class="h2 fw-bold text-uppercase mb-4"><?php echo esc_html($map_title); ?></h2>
+                <div class="ratio ratio-16x9 rounded overflow-hidden shadow-sm">
+                    <?php
           if ($lat && $lng) {
-            $src = ve_gmap_embed_src($lat, $lng, $zoom, 'vi');
+            $src = ve_gmap_embed_src($lat, $lng, $zoom, 'en');
             echo '<iframe src="'.esc_url($src).'" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>';
           } elseif ($map_iframe_raw && stripos($map_iframe_raw, '<iframe') !== false) {
             echo wp_kses($map_iframe_raw, [
@@ -91,10 +91,10 @@ function ve_gmap_embed_src($lat, $lng, $zoom = 16, $lang = 'vi') {
             echo '<div class="d-flex align-items-center justify-content-center bg-light text-muted">Nhập <code>map_lat</code> &amp; <code>map_lng</code> (hoặc dán iframe vào field cũ <code>map</code>).</div>';
           }
           ?>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </section>
 
 <?php get_footer(); ?>
