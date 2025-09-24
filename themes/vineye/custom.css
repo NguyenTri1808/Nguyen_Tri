@@ -522,6 +522,85 @@ a:hover {
     text-decoration: none
 }
 
+/* MOBILE: đặt hamburger trái, logo giữa, language phải */
+@media (max-width: 991.98px) {
+
+    /* Biến hàng topbar thành "khung định vị" */
+    #site-header .topbar .d-flex.align-items-center {
+        justify-content: center;
+        position: relative;
+        /* để .header-tools có thể absolute dựa vào đây */
+        min-height: 64px;
+        /* đảm bảo đủ cao */
+    }
+
+    /* Trải .header-tools ra full chiều ngang, 2 đầu là hamburger & language */
+    #site-header .header-tools {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        /* trái/phải */
+        gap: 12px;
+    }
+
+    /* Ẩn hotline ở mobile (nếu muốn) */
+    #site-header .header-tools .btn-call {
+        display: none !important;
+    }
+
+    /* Logo ở giữa */
+    #site-header .logo-col {
+        order: 0;
+        margin: 0;
+        text-align: center;
+        flex: 0 1 auto;
+    }
+
+    #site-header .logo-col .navbar-brand {
+        display: inline-block;
+    }
+
+    /* Language: gọn gàng bên phải */
+    .lang-switch {
+        display: inline-flex;
+        align-items: center;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .lang-switch img {
+        height: 16px;
+        width: auto;
+        margin-right: 6px;
+    }
+
+    .lang-switch li {
+        list-style: none;
+    }
+
+    .lang-switch ul {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 10px;
+    }
+
+    /* Nếu Polylang xuất dropdown, có thể style nhẹ */
+    .lang-switch select {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 8px;
+        font-size: 14px;
+        background: #fff;
+    }
+}
+
 body.nav-open {
     overflow: hidden;
     touch-action: none
