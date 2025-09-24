@@ -478,12 +478,28 @@ if ($group && is_array($group)) {
         </section>
         <!-- CHƯƠNG TRÌNH KHUYẾN MẠI  -->
         <section>
+            <?php
+                // LẤY DỮ LIỆU TỪ GROUP CHA "khuyenmai"
+                // Nếu dùng Options Page thì đổi: $km = get_field('khuyenmai', 'option');
+                $km = get_field('khuyenmai');
+
+                $t1   = $km['title']['title1'] ?? '';
+                $t2   = $km['title']['title2'] ?? '';
+                $desc = $km['content'] ?? '';
+                ?>
             <div class="title-doctors">
-                <h2 id="h2-bacsi-home3">CHƯƠNG TRÌNH </h2>
-                <h2 id="h2-bacsi-home"> KHUYẾN MẠI</h2>
+                <?php if ($t1): ?>
+                <h2 id="h2-bacsi-home3"><?php echo esc_html($t1); ?></h2>
+                <?php endif; ?>
+                <?php if ($t2): ?>
+                <h2 id="h2-bacsi-home"><?php echo esc_html($t2); ?></h2>
+                <?php endif; ?>
             </div>
+
             <div class="text-doctors">
-                <p>HÈ SANG – ƯU ĐÃI NGẬP TRÀN</p>
+                <?php if ($desc): ?>
+                <p><?php echo wp_kses_post($desc); /* dùng WYSIWYG thì giữ HTML */ ?></p>
+                <?php endif; ?>
             </div>
             <?php
                 if (!function_exists('get_first_image_url_from_content')) {
