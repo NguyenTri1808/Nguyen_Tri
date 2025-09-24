@@ -224,24 +224,22 @@ if ($group && is_array($group)) {
                 $bc_raw = get_field('baochi');
                 $bc     = is_array($bc_raw) ? $bc_raw : [];
 
-                // LẤY GROUP CON "title" (nếu không có thì là mảng rỗng)
-                $title  = isset($bc['title']) && is_array($bc['title']) ? $bc['title'] : [];
+                // LẤY GROUP CON "title" (nếu không có thì để mảng rỗng)
+                $title  = (isset($bc['title']) && is_array($bc['title'])) ? $bc['title'] : [];
 
-                // 2 field con: title1, title2 (sanitize text)
+                // 2 field con: title1, title2 (text)
                 $bc_t1  = isset($title['title1']) ? wp_strip_all_tags($title['title1']) : '';
                 $bc_t2  = isset($title['title2']) ? wp_strip_all_tags($title['title2']) : '';
                 ?>
-
-            <div class="container">
-                <div class="title-baochi">
-                    <?php if ($bc_t1 !== ''): ?>
-                    <h2 id="h2-baochi-home"><?php echo esc_html($bc_t1); ?></h2>
-                    <?php endif; ?>
-                    <?php if ($bc_t2 !== ''): ?>
-                    <h2 id="h2-baochi-home2"><?php echo esc_html($bc_t2); ?></h2>
-                    <?php endif; ?>
-                </div>
+            <div class="title-baochi">
+                <?php if ($bc_t1 !== ''): ?>
+                <h2 id="h2-baochi-home"><?php echo esc_html($bc_t1); ?></h2>
+                <?php endif; ?>
+                <?php if ($bc_t2 !== ''): ?>
+                <h2 id="h2-baochi-home2"><?php echo esc_html($bc_t2); ?></h2>
+                <?php endif; ?>
             </div>
+
 
             <div class="logo-container row">
                 <?php
