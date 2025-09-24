@@ -220,23 +220,29 @@ if ($group && is_array($group)) {
         <!-- Báo Chí Nói Gì Về Chúng Tôi -->
         <section class="partner-logos">
             <?php
-            // LẤY GROUP CHA "baochi"
-            $bc = get_field('baochi');
+                // LẤY GROUP CHA "baochi" (phòng thủ kiểu dữ liệu)
+                $bc_raw = get_field('baochi');
+                $bc     = is_array($bc_raw) ? $bc_raw : [];
 
-            // Tiêu đề: group con "title" với 2 field "title1", "title2"
-            $bc_t1 = is_array($bc) ? ($bc['title']['title1'] ?? '') : '';
-            $bc_t2 = is_array($bc) ? ($bc['title']['title2'] ?? '') : '';
-            ?>
+                // LẤY GROUP CON "title" (nếu không có thì là mảng rỗng)
+                $title  = isset($bc['title']) && is_array($bc['title']) ? $bc['title'] : [];
+
+                // 2 field con: title1, title2 (sanitize text)
+                $bc_t1  = isset($title['title1']) ? wp_strip_all_tags($title['title1']) : '';
+                $bc_t2  = isset($title['title2']) ? wp_strip_all_tags($title['title2']) : '';
+                ?>
+
             <div class="container">
                 <div class="title-baochi">
-                    <?php if ($bc_t1): ?>
+                    <?php if ($bc_t1 !== ''): ?>
                     <h2 id="h2-baochi-home"><?php echo esc_html($bc_t1); ?></h2>
                     <?php endif; ?>
-                    <?php if ($bc_t2): ?>
+                    <?php if ($bc_t2 !== ''): ?>
                     <h2 id="h2-baochi-home2"><?php echo esc_html($bc_t2); ?></h2>
                     <?php endif; ?>
                 </div>
             </div>
+
             <div class="logo-container row">
                 <?php
                 $baochi = get_field('baochi');
