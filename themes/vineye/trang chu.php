@@ -245,34 +245,46 @@ if ($group && is_array($group)) {
                 <?php
                 $baochi = get_field('baochi');
 
-                if ($baochi) {
+                if ($baochi && is_array($baochi)) {
                     foreach ($baochi as $field_name => $image) {
-                        if (!empty($image)) {
-                            // Nếu là array (ACF image field)
-                            if (is_array($image) && isset($image['url'])) {
-                                $src = esc_url($image['url']);
-                            } 
-                            // Nếu là ID (ACF image ID)
-                            elseif (is_numeric($image)) {
-                                $src = esc_url(wp_get_attachment_url($image));
-                            } 
-                            // Nếu là chuỗi (bạn nhập trực tiếp URL trong Textarea)
-                            else {
+                        // BỎ QUA NHÓM TIÊU ĐỀ MỚI THÊM
+                        if ($field_name === 'title') {
+                            continue;
+                        }
+
+                        // XỬ LÝ CHỈ KHI GIỐNG ẢNH
+                        $src = '';
+
+                        // ACF Image (array có 'url')
+                        if (is_array($image) && isset($image['url'])) {
+                            $src = esc_url($image['url']);
+                        }
+                        // ACF Image (ID)
+                        elseif (is_numeric($image)) {
+                            $src = esc_url(wp_get_attachment_url($image));
+                        }
+                        // URL chuỗi
+                        elseif (is_string($image) && $image !== '') {
+                            // đảm bảo là URL hợp lệ
+                            if (filter_var($image, FILTER_VALIDATE_URL)) {
                                 $src = esc_url($image);
                             }
+                        }
 
+                        if ($src) {
                             echo '<div class="col-md-2">
                                     <div class="logo-item">
                                         <a href="https://alobacsi.com/trung-tam-mat-quoc-te-vin-eye-dong-hanh-giai-phong-tam-nhin-cho-hang-trieu-nguoi.html?gidzl=QeEnU7oSAYbdch1xUOCiA6ETj7XZZNmjBiFWVJNQSYrzaRegP8acV7YMkdeqZN0eBfFlVJKkAAjbTfWY90">
-                                        <img loading="lazy" decoding="async" style="margin-top: 20px"    width="200" height="92" src="' . $src . '" alt="Logo"/>
+                                        <img loading="lazy" decoding="async" style="margin-top:20px" width="200" height="92" src="' . $src . '" alt="Logo"/>
                                         </a>
                                     </div>
-                                </div>';
+                                    </div>';
                         }
                     }
                 }
                 ?>
             </div>
+
         </section>
 
         <!-- BÁC SĨ & CHUYÊN GIA MẮT -->
