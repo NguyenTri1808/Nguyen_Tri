@@ -1,16 +1,12 @@
-
 <?php
 /**
  * Template Name: Dich Vu
  */
 get_header();
 
+if ( ! function_exists('dv_get_first_image_url') ) :
 /**
  * Helper: Lấy URL ảnh đầu tiên của bài viết
- * - Ưu tiên thumbnail
- * - Nếu không có: quét <img> đầu tiên trong content
- * - Nếu vẫn không có: tìm attachment ảnh đầu tiên
- * - Nếu vẫn không có: trả về ảnh fallback (tùy chỉnh)
  */
 function dv_get_first_image_url( $post_id, $fallback = '' ) {
   // 1) Thumbnail
@@ -25,12 +21,12 @@ function dv_get_first_image_url( $post_id, $fallback = '' ) {
 
   // 3) Attachment đầu tiên
   $attachments = get_children( [
-    'post_parent' => $post_id,
-    'post_type'   => 'attachment',
+    'post_parent'    => $post_id,
+    'post_type'      => 'attachment',
     'post_mime_type' => 'image',
-    'numberposts' => 1,
-    'orderby'     => 'menu_order',
-    'order'       => 'ASC',
+    'numberposts'    => 1,
+    'orderby'        => 'menu_order',
+    'order'          => 'ASC',
   ] );
   if ( $attachments ) {
     $att = array_shift( $attachments );
@@ -38,12 +34,16 @@ function dv_get_first_image_url( $post_id, $fallback = '' ) {
     if ( ! empty( $src[0] ) ) return esc_url( $src[0] );
   }
 
-  // 4) Ảnh fallback (đặt file bạn muốn trong theme)
+  // 4) Ảnh fallback
   if ( ! $fallback ) {
     $fallback = get_stylesheet_directory_uri() . '/assets/images/placeholder-16x9.jpg';
   }
   return esc_url( $fallback );
 }
+endif;
+
+// Text domain dùng cho bản dịch
+$td = 'mytheme';
 
 // Lấy slug category từ URL (?cat=slug). Nếu bạn thích dùng ID: ?cat_id=123
 $cat_slug = isset($_GET['cat']) ? sanitize_title( wp_unslash($_GET['cat']) ) : '';
@@ -70,8 +70,8 @@ if ( $cat_id ) {
 }
 $q = new WP_Query( $args );
 
-// Lấy danh sách category để hiện thanh lọc (tuỳ chỉnh: chỉ hiện child của 1 cat gốc)
-$root_cat_slug = ''; // nếu bạn có cat gốc “dich-vu”, set = 'dich-vu' để chỉ hiện các chuyên mục con
+// Lấy danh sách category để hiện thanh lọc
+$root_cat_slug = ''; // ví dụ: 'dich-vu'
 $cats = [];
 if ( $root_cat_slug ) {
   $root = get_category_by_slug( $root_cat_slug );
@@ -91,13 +91,12 @@ if ( $root_cat_slug ) {
   ]);
 }
 
-// URL của trang hiện tại để gắn query ?cat=
+// URL trang hiện tại để gắn query ?cat=
 $current_page_url = get_permalink( get_queried_object_id() );
 ?>
 
 <style>
-  /* Nhẹ nhàng giống layout minh họa */
-  .dv-card {
+.dv-card {
     border: 1px solid #e9ecef;
     border-radius: 12px;
     overflow: hidden;
@@ -106,20 +105,23 @@ $current_page_url = get_permalink( get_queried_object_id() );
     height: 100%;
     display: flex;
     flex-direction: column;
-  }
-  .dv-card__img {
+}
+
+.dv-card__img {
     width: 100%;
     aspect-ratio: 16/9;
     object-fit: cover;
     display: block;
-  }
-  .dv-card__body {
+}
+
+.dv-card__body {
     padding: 18px 20px 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-  }
-  .dv-cat-filter a {
+}
+
+.dv-cat-filter a {
     display: inline-block;
     padding: 8px 14px;
     border: 1px solid #cbd3da;
@@ -129,78 +131,83 @@ $current_page_url = get_permalink( get_queried_object_id() );
     font-size: 14px;
     color: #0d6efd;
     background: #fff;
-  }
-  .dv-cat-filter a.active {
+}
+
+.dv-cat-filter a.active {
     color: #fff;
     background: #0d6efd;
     border-color: #0d6efd;
-  }
+}
 </style>
 
 <div class="container my-5">
-  <h1 class="mb-4"><?php echo esc_html( get_the_title() ); ?></h1>
+    <h1 class="mb-4"><?php echo esc_html( get_the_title() ); ?></h1>
 
-  <?php if ( ! empty( $cats ) ) : ?>
+    <?php if ( ! empty( $cats ) ) : ?>
     <div class="dv-cat-filter mb-4">
-      <!-- Nút “Tất cả” -->
-      <a href="<?php echo esc_url( remove_query_arg( ['cat','cat_id'], $current_page_url ) ); ?>"
-         class="<?php echo $cat_id ? '' : 'active'; ?>">
-        Tất cả
-      </a>
-      <?php foreach ( $cats as $c ) :
-        $url = add_query_arg( [ 'cat' => $c->slug ], $current_page_url );
+        <!-- Nút “Tất cả” -->
+        <a href="<?php echo esc_url( remove_query_arg( ['cat','cat_id'], $current_page_url ) ); ?>"
+            class="<?php echo $cat_id ? '' : 'active'; ?>">
+            <?php esc_html_e( 'All', $td ); ?>
+        </a>
+
+        <?php foreach ( $cats as $c ) :
+        $url    = add_query_arg( [ 'cat' => $c->slug ], $current_page_url );
         $active = ( $cat_id === (int) $c->term_id ) ? 'active' : '';
       ?>
         <a href="<?php echo esc_url( $url ); ?>" class="<?php echo esc_attr( $active ); ?>">
-          <?php echo esc_html( $c->name ); ?>
+            <?php echo esc_html( $c->name ); ?>
         </a>
-      <?php endforeach; ?>
+        <?php endforeach; ?>
     </div>
-  <?php endif; ?>
+    <?php endif; ?>
 
-  <?php if ( $cat_id ) :
+    <?php if ( $cat_id ) :
     $cat_obj = get_category( $cat_id );
     if ( $cat_obj ) : ?>
-      <h2 class="mb-4"><?php echo esc_html( $cat_obj->name ); ?></h2>
+    <h2 class="mb-4"><?php echo esc_html( $cat_obj->name ); ?></h2>
     <?php endif;
   endif; ?>
 
-  <div class="row g-4">
-    <?php if ( $q->have_posts() ) : while ( $q->have_posts() ) : $q->the_post();
+    <div class="row g-4">
+        <?php if ( $q->have_posts() ) : while ( $q->have_posts() ) : $q->the_post();
       $img = dv_get_first_image_url( get_the_ID() );
     ?>
-      <div class="col-12 col-md-6">
-        <article class="dv-card">
-          <a href="<?php the_permalink(); ?>" class="d-block">
-            <img class="dv-card__img" src="<?php echo esc_url( $img ); ?>" alt="<?php echo esc_attr( get_the_title() ); ?>">
-          </a>
-          <div class="dv-card__body">
-            <h3 class="h5 m-0">
-              <a href="<?php the_permalink(); ?>" class="text-decoration-none">
-                <?php the_title(); ?>
-              </a>
-            </h3>
-            <div class="text-muted">
-              <?php
+        <div class="col-12 col-md-6">
+            <article class="dv-card">
+                <a href="<?php the_permalink(); ?>" class="d-block">
+                    <img class="dv-card__img" src="<?php echo esc_url( $img ); ?>"
+                        alt="<?php echo esc_attr( get_the_title() ); ?>">
+                </a>
+                <div class="dv-card__body">
+                    <h3 class="h5 m-0">
+                        <a href="<?php the_permalink(); ?>" class="text-decoration-none">
+                            <?php the_title(); ?>
+                        </a>
+                    </h3>
+                    <div class="text-muted">
+                        <?php
                 $desc = get_the_excerpt();
                 if ( ! $desc ) $desc = wp_strip_all_tags( get_the_content() );
                 echo esc_html( wp_trim_words( $desc, 28, '…' ) );
               ?>
-            </div>
-            <div>
-              <a class="fw-semibold" href="<?php the_permalink(); ?>">XEM CHI TIẾT »</a>
-            </div>
-          </div>
-        </article>
-      </div>
-    <?php endwhile; else: ?>
-      <div class="col-12">
-        <p>Chưa có bài viết nào trong mục này.</p>
-      </div>
-    <?php endif; wp_reset_postdata(); ?>
-  </div>
+                    </div>
+                    <div>
+                        <a class="fw-semibold" href="<?php the_permalink(); ?>">
+                            <?php esc_html_e( 'View details', $td ); ?> »
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+        <?php endwhile; else: ?>
+        <div class="col-12">
+            <p><?php esc_html_e( 'There are no posts in this category yet.', $td ); ?></p>
+        </div>
+        <?php endif; wp_reset_postdata(); ?>
+    </div>
 
-  <?php
+    <?php
   // Phân trang, giữ lại tham số ?cat hiện tại
   $big = 999999999;
   $paginate = paginate_links( [
@@ -210,8 +217,8 @@ $current_page_url = get_permalink( get_queried_object_id() );
     'total'     => $q->max_num_pages,
     'type'      => 'list',
     'mid_size'  => 2,
-    'prev_text' => '«',
-    'next_text' => '»',
+    'prev_text' => __( '«', $td ),
+    'next_text' => __( '»', $td ),
     'add_args'  => $cat_slug ? [ 'cat' => $cat_slug ] : [],
   ] );
   if ( $paginate ) {
@@ -221,7 +228,3 @@ $current_page_url = get_permalink( get_queried_object_id() );
 </div>
 
 <?php get_footer(); ?>
-
-<?php
-get_footer();
-?>

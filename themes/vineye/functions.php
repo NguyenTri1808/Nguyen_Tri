@@ -1,4 +1,8 @@
 <?php
+add_action( 'after_setup_theme', function () {
+  load_theme_textdomain( 'mytheme', get_template_directory() . '/languages' );
+} );
+
 // ===== Load CSS & JS =====
 function vineye_enqueue_scripts() {
     // Bootstrap CSS
