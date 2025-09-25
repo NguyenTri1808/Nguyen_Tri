@@ -1,25 +1,29 @@
 <?php
 /**
- * Template Name: Dich Vu
+ * Template Name: Services
  */
 get_header();
 
-if ( ! function_exists('dv_get_first_image_url') ) :
 /**
- * Helper: Lấy URL ảnh đầu tiên của bài viết
+ * Helper: Get the first image URL of a post
+ * - Prefer featured image (thumbnail)
+ * - Else: scan the first <img> in content
+ * - Else: find the first image attachment
+ * - Else: return a fallback image (customizable)
  */
+if ( ! function_exists('dv_get_first_image_url') ) :
 function dv_get_first_image_url( $post_id, $fallback = '' ) {
   // 1) Thumbnail
   $thumb = get_the_post_thumbnail_url( $post_id, 'large' );
   if ( $thumb ) return $thumb;
 
-  // 2) Ảnh <img> đầu tiên trong content
+  // 2) First <img> in content
   $content = get_post_field( 'post_content', $post_id );
   if ( $content && preg_match( '/<img[^>]+src=[\'"]([^\'"]+)[\'"]/i', $content, $m ) ) {
     return esc_url( $m[1] );
   }
 
-  // 3) Attachment đầu tiên
+  // 3) First image attachment
   $attachments = get_children( [
     'post_parent'    => $post_id,
     'post_type'      => 'attachment',
@@ -34,7 +38,7 @@ function dv_get_first_image_url( $post_id, $fallback = '' ) {
     if ( ! empty( $src[0] ) ) return esc_url( $src[0] );
   }
 
-  // 4) Ảnh fallback
+  // 4) Fallback image
   if ( ! $fallback ) {
     $fallback = get_stylesheet_directory_uri() . '/assets/images/placeholder-16x9.jpg';
   }
@@ -42,10 +46,10 @@ function dv_get_first_image_url( $post_id, $fallback = '' ) {
 }
 endif;
 
-// Text domain dùng cho bản dịch
-$td = 'mytheme';
+// Text domain for translations
+$td = 'vineye';
 
-// Lấy slug category từ URL (?cat=slug). Nếu bạn thích dùng ID: ?cat_id=123
+// Get category slug from URL (?cat=slug). Or use ID: ?cat_id=123
 $cat_slug = isset($_GET['cat']) ? sanitize_title( wp_unslash($_GET['cat']) ) : '';
 $cat_id   = 0;
 if ( $cat_slug ) {
@@ -55,10 +59,10 @@ if ( $cat_slug ) {
   $cat_id = absint( $_GET['cat_id'] );
 }
 
-// Phân trang
+// Pagination
 $paged = max( 1, get_query_var('paged'), get_query_var('page') );
 
-// Query bài viết theo category (nếu có)
+// Query posts by category (if any)
 $args = [
   'post_type'           => 'post',
   'posts_per_page'      => 10,
@@ -70,8 +74,8 @@ if ( $cat_id ) {
 }
 $q = new WP_Query( $args );
 
-// Lấy danh sách category để hiện thanh lọc
-$root_cat_slug = ''; // ví dụ: 'dich-vu'
+// Build category list for filter (optionally: only children of a root category)
+$root_cat_slug = ''; // e.g. 'dich-vu' to show only its child categories
 $cats = [];
 if ( $root_cat_slug ) {
   $root = get_category_by_slug( $root_cat_slug );
@@ -91,11 +95,12 @@ if ( $root_cat_slug ) {
   ]);
 }
 
-// URL trang hiện tại để gắn query ?cat=
+// Current page URL to attach ?cat=
 $current_page_url = get_permalink( get_queried_object_id() );
 ?>
 
 <style>
+/* Light card layout */
 .dv-card {
     border: 1px solid #e9ecef;
     border-radius: 12px;
@@ -145,12 +150,11 @@ $current_page_url = get_permalink( get_queried_object_id() );
 
     <?php if ( ! empty( $cats ) ) : ?>
     <div class="dv-cat-filter mb-4">
-        <!-- Nút “Tất cả” -->
+        <!-- “All” button -->
         <a href="<?php echo esc_url( remove_query_arg( ['cat','cat_id'], $current_page_url ) ); ?>"
             class="<?php echo $cat_id ? '' : 'active'; ?>">
             <?php esc_html_e( 'All', $td ); ?>
         </a>
-
         <?php foreach ( $cats as $c ) :
         $url    = add_query_arg( [ 'cat' => $c->slug ], $current_page_url );
         $active = ( $cat_id === (int) $c->term_id ) ? 'active' : '';
@@ -208,7 +212,7 @@ $current_page_url = get_permalink( get_queried_object_id() );
     </div>
 
     <?php
-  // Phân trang, giữ lại tham số ?cat hiện tại
+  // Pagination, keep current ?cat
   $big = 999999999;
   $paginate = paginate_links( [
     'base'      => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
