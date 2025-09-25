@@ -2,7 +2,7 @@
 /**
  * Generic page layout (i18n-ready)
  */
-$td = 'mytheme'; // đổi theo text domain của theme bạn
+$td = 'vineye'; // đổi theo text domain của theme bạn
 get_header(); ?>
 
 <main role="main" aria-label="<?php echo esc_attr_x( 'Main content', 'ARIA label', $td ); ?>">
